@@ -1,0 +1,76 @@
+# CI for the hydra plugin (Gitea Actions). ubuntu-24.04 runner
+# + the oven/bun:1 container, auth via the shared REGISTRY_TOKEN secret. One package, no
+# workspaces; @punktfunk/* resolves from the Gitea registry via the bunfig scope map.
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    container:
+      image: oven/bun:1
+    timeout-minutes: 15
+    steps:
+      # oven/bun's slim base ships neither git nor a CA bundle — actions/checkout needs both.
+      - name: Install git + CA certs
+        run: apt-get update && apt-get install -y --no-install-recommends ca-certificates git nodejs
+      - uses: actions/checkout@v4
+      - name: Registry auth
+        env:
+          TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+        run: |
+          test -n "$TOKEN" || { echo "REGISTRY_TOKEN secret is empty"; exit 1; }
+          printf '//git.unom.io/api/packages/unom/npm/:_authToken=%s\n' "$TOKEN" > "$HOME/.npmrc"
+      - name: Install
+        run: bun install --frozen-lockfile
+      - name: Lint & format
+        run: bunx biome check
+      - name: Typecheck
+        run: bunx tsc --noEmit
+      - name: Test
+        run: bun test
+      - name: Build
+        run: bun run build
+      - name: Sanity — plugin default export is a valid PluginDef
+        run: |
+          bun -e 'import plugin from "./dist/index.js"; if (plugin?.name !== "hydra" || typeof plugin?.main !== "function") { console.error("bad default export", plugin); process.exit(1); } console.log("ok:", plugin.name)'
+
+  publish:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    container:
+      image: oven/bun:1
+    timeout-minutes: 15
+    steps:
+      - name: Install git + CA certs
+        run: apt-get update && apt-get install -y --no-install-recommends ca-certificates git nodejs
+      - uses: actions/checkout@v4
+      - name: Registry auth
+        env:
+          TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+        run: |
+          test -n "$TOKEN" || { echo "REGISTRY_TOKEN secret is empty"; exit 1; }
+          printf '//git.unom.io/api/packages/unom/npm/:_authToken=%s\n' "$TOKEN" > "$HOME/.npmrc"
+      - name: Install
+        run: bun install --frozen-lockfile
+      - name: Tag matches package version
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG="$(node -p "require('./package.json').version")"
+          test "$TAG" = "$PKG" || { echo "tag $GITHUB_REF_NAME != package version $PKG"; exit 1; }
+      # Skipped when the version is already up (a hand publish while the runner queue was stuck).
+      - name: Publish (prepublishOnly builds the bundle)
+        run: |
+          PKG="$(node -p "require('./package.json').version")"
+          if V="$PKG" bun -e 'fetch("https://git.unom.io/api/packages/unom/npm/@punktfunk%2Fplugin-hydra").then(r=>r.json()).then(d=>process.exit(d.versions?.[process.env.V]?0:1)).catch(()=>process.exit(1))'; then
+            echo "@punktfunk/plugin-hydra@$PKG is already on the registry — nothing to publish"
+          else
+            bun publish
+          fi

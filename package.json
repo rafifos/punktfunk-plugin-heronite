@@ -1,0 +1,107 @@
+{
+	"name": "@punktfunk/plugin-hydra",
+	"version": "0.1.0",
+	"private": false,
+	"type": "module",
+	"description": "Punktfunk plugin: adds your Hydra Launcher games to the host's library, starts them through Hydra, and shows Hydra's downloads on the host.",
+	"license": "MIT OR Apache-2.0",
+	"homepage": "https://git.unom.io/unom/punktfunk-plugin-hydra",
+	"repository": {
+		"type": "git",
+		"url": "https://git.unom.io/unom/punktfunk-plugin-hydra.git"
+	},
+	"keywords": [
+		"punktfunk",
+		"plugin",
+		"hydra",
+		"hydra-launcher",
+		"game-library",
+		"game-streaming"
+	],
+	"main": "./dist/index.js",
+	"module": "./dist/index.js",
+	"bin": {
+		"punktfunk-plugin-hydra": "./dist/cli.js"
+	},
+	"files": [
+		"dist"
+	],
+	"punktfunk": {
+		"schema": 1,
+		"id": "hydra",
+		"reads": [
+			"~/.config/hydralauncher/hydra-db",
+			"~/snap/hydralauncher/current/.config/hydralauncher/hydra-db"
+		],
+		"exec": {
+			"run": {
+				"exe": "hydralauncher",
+				"args": [
+					"hydralauncher://run?shop={shop}&objectId={game}"
+				],
+				"params": {
+					"shop": "id",
+					"game": "id"
+				}
+			},
+			"open": {
+				"exe": "xdg-open",
+				"args": [
+					"hydralauncher://run?shop={shop}&objectId={game}"
+				],
+				"params": {
+					"shop": "id",
+					"game": "id"
+				}
+			},
+			"open-windows": {
+				"exe": "explorer.exe",
+				"args": [
+					"hydralauncher://run?shop={shop}&objectId={game}"
+				],
+				"params": {
+					"shop": "id",
+					"game": "id"
+				}
+			},
+			"window": {
+				"exe": "xdg-open",
+				"args": [
+					"hydralauncher://"
+				]
+			},
+			"window-windows": {
+				"exe": "explorer.exe",
+				"args": [
+					"hydralauncher://"
+				]
+			},
+			"big-picture": {
+				"exe": "hydralauncher",
+				"args": [
+					"--big-picture"
+				]
+			}
+		}
+	},
+	"publishConfig": {
+		"registry": "https://git.unom.io/api/packages/unom/npm/"
+	},
+	"scripts": {
+		"typecheck": "tsc --noEmit",
+		"test": "bun test",
+		"build": "bun build src/index.ts src/cli.ts --target=bun --outdir dist --external effect --external '@punktfunk/*'",
+		"prepublishOnly": "bun run build",
+		"check": "bunx biome check ."
+	},
+	"dependencies": {
+		"@punktfunk/host": "^0.3.0",
+		"@punktfunk/plugin-kit": "^0.11.0",
+		"effect": "4.0.0-beta.99"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.5.2",
+		"@types/bun": "^1.3.0",
+		"typescript": "^5.9.3"
+	}
+}
