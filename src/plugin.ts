@@ -36,8 +36,7 @@ const HydraConfig = Schema.Struct({
 	),
 	bigPicture: Schema.Boolean.annotate({
 		title: "Show a Hydra Big Picture tile",
-		description:
-			"Add a tile that opens Hydra's controller interface. Linux, with Hydra installed from its deb, rpm or AUR package.",
+		description: "Add a tile that opens Hydra's controller interface.",
 	}).pipe(
 		Schema.withDecodingDefaultKey(Effect.succeed(true), {
 			encodingStrategy: "omit",

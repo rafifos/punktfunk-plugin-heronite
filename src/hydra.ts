@@ -246,7 +246,33 @@ export const toEntries = (
 	return out;
 };
 
-/** Hydra's own tiles: its window, and on a packaged Linux install its Big Picture mode. */
+/**
+ * Hydra's Big Picture tile: Hydra started with `--big-picture`, the mode's only switch. The
+ * packaged Linux binary runs from the manifest; any other install the host finds itself, on
+ * Windows in the user's profile, on Linux by the desktop entry that handles Hydra's link.
+ */
+const bigPictureTile = ({ platform, packaged }: Launchers): ProviderEntry[] => {
+	const launch =
+		platform === "linux" && packaged
+			? { kind: "exec", value: "big-picture" }
+			: platform === "linux" || platform === "win32"
+				? { kind: "launcher_ui", value: "hydra-big-picture" }
+				: undefined;
+	return launch
+		? [
+				{
+					external_id: "big-picture",
+					title: "Hydra Big Picture",
+					role: "launcher" as const,
+					icon: "hydra",
+					launch,
+					platform: "PC",
+				},
+			]
+		: [];
+};
+
+/** Hydra's own tiles: its window and its Big Picture mode. */
 export const launcherEntries = (
 	cfg: { launcher?: boolean; bigPicture?: boolean },
 	{ platform, packaged }: Launchers,
@@ -266,18 +292,7 @@ export const launcherEntries = (
 				},
 			]
 		: []),
-	...(cfg.bigPicture !== false && platform === "linux" && packaged
-		? [
-				{
-					external_id: "big-picture",
-					title: "Hydra Big Picture",
-					role: "launcher" as const,
-					icon: "hydra",
-					launch: { kind: "exec", value: "big-picture" },
-					platform: "PC",
-				},
-			]
-		: []),
+	...(cfg.bigPicture !== false ? bigPictureTile({ platform, packaged }) : []),
 ];
 
 /** Hydra keeps writing an active download every 2 s; this long without a write, it isn't running. */
