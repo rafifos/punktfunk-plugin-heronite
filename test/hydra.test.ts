@@ -98,7 +98,7 @@ describe("entries", () => {
 });
 
 describe("launcher tiles", () => {
-	test("Big Picture only where Hydra's binary is on PATH", () => {
+	test("Big Picture from the packaged binary, else through the host", () => {
 		const ids = (platform: NodeJS.Platform, packaged: boolean) =>
 			launcherEntries({}, { platform, packaged }).map(
 				(e) => `${e.external_id}:${e.launch?.value}`,
@@ -107,8 +107,17 @@ describe("launcher tiles", () => {
 			"launcher:window",
 			"big-picture:big-picture",
 		]);
-		expect(ids("linux", false)).toEqual(["launcher:window"]);
-		expect(ids("win32", false)).toEqual(["launcher:window-windows"]);
+		expect(ids("linux", false)).toEqual([
+			"launcher:window",
+			"big-picture:hydra-big-picture",
+		]);
+		expect(ids("win32", false)).toEqual([
+			"launcher:window-windows",
+			"big-picture:hydra-big-picture",
+		]);
+		expect(
+			launcherEntries({}, { platform: "win32", packaged: false })[1]?.launch,
+		).toEqual({ kind: "launcher_ui", value: "hydra-big-picture" });
 		expect(
 			launcherEntries({ launcher: false, bigPicture: false }, linux),
 		).toEqual([]);

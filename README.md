@@ -13,8 +13,8 @@ later; an older host lists the games and ignores the rest.
 - Every game in Hydra's library that Hydra can start: a PC game with its executable set, or a
   Classics game with a ROM.
 - Every game Hydra is downloading, marked as not installed.
-- A **Hydra** tile that opens Hydra's window, and on Linux a **Hydra Big Picture** tile when
-  Hydra came from its deb, rpm or AUR package. Either can be switched off in the settings.
+- A **Hydra** tile that opens Hydra's window, and a **Hydra Big Picture** tile that opens its
+  controller interface. Either can be switched off in the settings.
 
 A game you only added to Hydra's library, with no download, is left out: the host has nothing
 to start or wait for.
@@ -37,7 +37,8 @@ What the host gets:
 
 **Linux:** nothing to set. Hydra's data in `~/.config/hydralauncher` (AppImage, deb, rpm, AUR)
 or the snap's folder is found by itself. Games open through the `hydralauncher://` link; an
-AppImage needs to be integrated (Gear Lever, AppImageLauncher) so the link reaches it.
+AppImage needs to be integrated (Gear Lever, AppImageLauncher) so the link and the Big Picture
+tile reach it.
 
 **Windows:** the plugin runner can't read your profile by itself. The source asks for
 `%APPDATA%\hydralauncher\hydra-db`; allow it in the console under **Library** → **Game sources**
