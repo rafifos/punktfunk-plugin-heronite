@@ -1,6 +1,6 @@
 {
 	"name": "@punktfunk/plugin-hydra",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"private": false,
 	"type": "module",
 	"description": "Punktfunk plugin: adds your Hydra Launcher games to the host's library, starts them through Hydra, and shows Hydra's downloads on the host.",
