@@ -29,6 +29,7 @@ const HydraConfig = Schema.Struct({
 	launcher: Schema.Boolean.annotate({
 		title: "Show a Hydra tile",
 		description: "Add a tile that opens Hydra's window.",
+		default: true,
 	}).pipe(
 		Schema.withDecodingDefaultKey(Effect.succeed(true), {
 			encodingStrategy: "omit",
@@ -37,6 +38,7 @@ const HydraConfig = Schema.Struct({
 	bigPicture: Schema.Boolean.annotate({
 		title: "Show a Hydra Big Picture tile",
 		description: "Add a tile that opens Hydra's controller interface.",
+		default: true,
 	}).pipe(
 		Schema.withDecodingDefaultKey(Effect.succeed(true), {
 			encodingStrategy: "omit",
