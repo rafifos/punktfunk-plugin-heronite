@@ -61,3 +61,7 @@ works while Hydra runs. `test/fixtures/hydra-db` was written by classic-level, H
 store; `test/fixtures/make-db.mjs` writes it again.
 
 Licensed MIT OR Apache-2.0.
+
+## Use of AI
+
+This project uses AI for writing code.
