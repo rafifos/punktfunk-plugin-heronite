@@ -33,6 +33,9 @@
 			"~/.config/hydralauncher/hydra-db",
 			"~/snap/hydralauncher/current/.config/hydralauncher/hydra-db"
 		],
+		"files": [
+			"~/AppData/Roaming/hydralauncher/hydra-db"
+		],
 		"exec": {
 			"run": {
 				"exe": "hydralauncher",
