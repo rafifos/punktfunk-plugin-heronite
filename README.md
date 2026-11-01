@@ -40,9 +40,9 @@ or the snap's folder is found by itself. Games open through the `hydralauncher:/
 AppImage needs to be integrated (Gear Lever, AppImageLauncher) so the link and the Big Picture
 tile reach it.
 
-**Windows:** the plugin runner can't read your profile by itself. The source asks for
-`%APPDATA%\hydralauncher\hydra-db`; allow it in the console under **Library** → **Game sources**
-→ Hydra.
+**Windows:** the plugin runner can't read your profile by itself. The manifest names
+`%APPDATA%\hydralauncher\hydra-db` by its own files, so a current host opens it when the plugin
+installs; an older host asks for it under **Library** → **Game sources** → Hydra.
 
 Elsewhere, set **Hydra data folder** to the folder holding `hydra-db`.
 
