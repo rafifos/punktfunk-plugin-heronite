@@ -14,13 +14,13 @@ Decisions live in the ADRs: [launch through Heronite](adr/0001-launch-through-he
 
 ## Identity
 
-| Field | Value |
-| --- | --- |
-| npm package | `@rafifos/plugin-heronite` |
-| plugin id / store | `heronite` |
-| library ids | `heronite:<runner>:<appName>` |
-| first version | `0.1.0` (the Hydra-era tags were removed; upstream keeps its own) |
-| licence | MIT OR Apache-2.0 |
+| Field             | Value                                                             |
+| ----------------- | ----------------------------------------------------------------- |
+| npm package       | `@rafifos/plugin-heronite`                                        |
+| plugin id / store | `heronite`                                                        |
+| library ids       | `heronite:<runner>:<appName>`                                     |
+| first version     | `0.1.0` (the Hydra-era tags were removed; upstream keeps its own) |
+| licence           | MIT OR Apache-2.0                                                 |
 
 The Heronite checkout under `__references/` is a read-only reference. It is git-ignored and its GPL
 code is never copied or translated.
@@ -59,34 +59,34 @@ exact version because this layer follows its internals.
 
 Data root, in order: the configured **Heronite data folder**, then the platform defaults.
 
-| Install | Data root |
-| --- | --- |
-| Linux package | `~/.local/share/heronite` (`$XDG_DATA_HOME/heronite`) |
-| Linux Flatpak | `~/.var/app/app.heronite.Heronite/data/heronite` |
+| Install           | Data root                                                     |
+| ----------------- | ------------------------------------------------------------- |
+| Linux package     | `~/.local/share/heronite` (`$XDG_DATA_HOME/heronite`)         |
+| Linux Flatpak     | `~/.var/app/app.heronite.Heronite/data/heronite`              |
 | Windows installer | `~/AppData/Roaming/heronite/data` (`%APPDATA%\heronite\data`) |
-| Windows portable | `<copy>\data` — only through the configured folder |
-| any | `HERONITE_DATA_DIR` — only through the configured folder |
+| Windows portable  | `<copy>\data` — only through the configured folder            |
+| any               | `HERONITE_DATA_DIR` — only through the configured folder      |
 
 Files used:
 
-| File | Used for |
-| --- | --- |
-| `sideload_apps/library.json` | local games, Steam entries, their `is_installed` and executable |
-| `store_cache/legendary_library.json` | Epic library |
-| `store_cache/gog_library.json` | GOG library |
-| `store_cache/nile_library.json` | Amazon library |
-| `gog_store/installed.json` | GOG install paths and executables |
-| `store_cache/steam_library.json` | installed Steam app ids (for the id-only Steam join) |
-| `store/config.json` | hidden games, favourites |
-| `local_library/library.json` | launch kind, executable, ROMs, emulator ids, status |
-| `local_library/metadata.json` | title, description, developers, publishers, genres, dates, art URLs |
-| `local_library/art.json` | art set by hand (remote URLs only; `localart:` is skipped) |
-| `local_library/emulators.json` | emulator profiles and platform names |
-| `local_library/copies.json` | copy groups linked by the user |
-| `local_library/sessions.json` | per-game sessions (tab) |
-| `local_library/statuses.json` | completion status labels (tab) |
-| `store/timestamp.json` | playtime and last played (tab) |
-| `store/download-manager.json` | the download queue and history |
+| File                                 | Used for                                                            |
+| ------------------------------------ | ------------------------------------------------------------------- |
+| `sideload_apps/library.json`         | local games, Steam entries, their `is_installed` and executable     |
+| `store_cache/legendary_library.json` | Epic library                                                        |
+| `store_cache/gog_library.json`       | GOG library                                                         |
+| `store_cache/nile_library.json`      | Amazon library                                                      |
+| `gog_store/installed.json`           | GOG install paths and executables                                   |
+| `store_cache/steam_library.json`     | installed Steam app ids (for the id-only Steam join)                |
+| `store/config.json`                  | hidden games, favourites                                            |
+| `local_library/library.json`         | launch kind, executable, ROMs, emulator ids, status                 |
+| `local_library/metadata.json`        | title, description, developers, publishers, genres, dates, art URLs |
+| `local_library/art.json`             | art set by hand (remote URLs only; `localart:` is skipped)          |
+| `local_library/emulators.json`       | emulator profiles and platform names                                |
+| `local_library/copies.json`          | copy groups linked by the user                                      |
+| `local_library/sessions.json`        | per-game sessions (tab)                                             |
+| `local_library/statuses.json`        | completion status labels (tab)                                      |
+| `store/timestamp.json`               | playtime and last played (tab)                                      |
+| `store/download-manager.json`        | the download queue and history                                      |
 
 Heronite writes JSON through a temp file and rename, so reads are safe while it runs; every read is
 retried once and a malformed file is treated as absent, never as an empty library.
@@ -128,12 +128,12 @@ only when the program is known). Both toggleable.
 Every title starts Heronite; the plugin never starts a game's own executable (ADR-0001). The
 transport is chosen per install, not per game:
 
-| Situation | Recipe |
-| --- | --- |
-| `heronite-rs` on `PATH` | `heronite-rs --no-gui --launch <runner> <appName>` |
-| program folder configured | `<program>/heronite-rs --no-gui --launch <runner> <appName>` |
-| Flatpak data root found | `flatpak run app.heronite.Heronite --no-gui --launch <runner> <appName>` |
-| otherwise | `xdg-open` (Linux) / `explorer.exe` (Windows) with `heronite://launch?appName=…&runner=…` |
+| Situation                 | Recipe                                                                                    |
+| ------------------------- | ----------------------------------------------------------------------------------------- |
+| `heronite-rs` on `PATH`   | `heronite-rs --no-gui --launch <runner> <appName>`                                        |
+| program folder configured | `<program>/heronite-rs --no-gui --launch <runner> <appName>`                              |
+| Flatpak data root found   | `flatpak run app.heronite.Heronite --no-gui --launch <runner> <appName>`                  |
+| otherwise                 | `xdg-open` (Linux) / `explorer.exe` (Windows) with `heronite://launch?appName=…&runner=…` |
 
 Arguments use Heronite's two-argument `--launch` form so no URL encoding is involved. The protocol
 fallback percent-encodes both values; the host caps a parameter at 128 characters, so a title whose
@@ -147,14 +147,14 @@ the `detect` hints keep the session alive.
 
 `store/download-manager.json` holds the queue and the history, not live progress. Rows map as:
 
-| Queue element | Row |
-| --- | --- |
-| first, queue not paused | `downloading`, total from the stored size when parseable |
-| other queued elements | `queued` |
-| `finished` with `status: done` | `done` |
-| `finished` with `status: error` | `failed`, with Heronite's error when present |
-| `finished` with `status: abort` | `cancelled` |
-| queue paused by the user | `paused` |
+| Queue element                   | Row                                                      |
+| ------------------------------- | -------------------------------------------------------- |
+| first, queue not paused         | `downloading`, total from the stored size when parseable |
+| other queued elements           | `queued`                                                 |
+| `finished` with `status: done`  | `done`                                                   |
+| `finished` with `status: error` | `failed`, with Heronite's error when present             |
+| `finished` with `status: abort` | `cancelled`                                              |
+| queue paused by the user        | `paused`                                                 |
 
 Only changes are sent. Heronite writes the file on queue transitions, so neither percent, speed, ETA
 nor "is Heronite running" can be derived; the README documents that a download interrupted by
