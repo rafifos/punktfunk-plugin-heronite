@@ -201,9 +201,16 @@ describe("watchDirs", () => {
 
 describe("defaultRoots", () => {
   test("returns the two Linux roots for the manifest's reads", () => {
-    expect(defaultRoots({ home: HOME })).toEqual([
-      join(HOME, ".local", "share", "heronite"),
-      join(HOME, ".var", "app", "app.heronite.Heronite", "data", "heronite"),
+    expect(defaultRoots({ home: HOME, env: {} })).toEqual([
+      `${HOME}/.local/share/heronite`,
+      `${HOME}/.var/app/app.heronite.Heronite/data/heronite`,
+    ]);
+  });
+
+  test("honours XDG_DATA_HOME for the native root", () => {
+    expect(defaultRoots({ home: HOME, env: { XDG_DATA_HOME: "/xdg/data" } })).toEqual([
+      "/xdg/data/heronite",
+      `${HOME}/.var/app/app.heronite.Heronite/data/heronite`,
     ]);
   });
 });

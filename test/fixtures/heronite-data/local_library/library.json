@@ -66,7 +66,9 @@
 			"playniteId": "heroic_ExampleHiddenGame",
 			"source": "manual",
 			"launchKind": "executable",
-			"title": "Example Hidden Game"
+			"title": "Example Hidden Game",
+			"windowsExecutable": "/games/example-hidden/example-game",
+			"remappedExecutable": "/games/example-hidden/example-game"
 		},
 		"amzn1.adg.product.Example": {
 			"appName": "amzn1.adg.product.Example",

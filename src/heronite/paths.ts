@@ -200,11 +200,8 @@ export function dataPaths(root: string): DataPaths {
 
 /** The Linux roots the manifest asks for in `reads`, used by the host's access prompt. */
 export function defaultRoots(system: SystemContext = {}): readonly string[] {
-  const home = system.home ?? homedir();
-  return [
-    path.join(home, ".local", "share", "heronite"),
-    path.join(home, ".var", "app", FLATPAK_APP_ID, "data", "heronite"),
-  ];
+  const { home, env } = resolveContext(system);
+  return [linuxDataRoot(home, env, path.posix), flatpakRoot(home, "linux")];
 }
 
 /** Folders that change while Heronite runs; the plugin watches these, not single files. */

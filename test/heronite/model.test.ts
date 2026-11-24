@@ -58,6 +58,11 @@ describe("heronite-data fixture root", () => {
     const emulator = games.find((game) => game.app_name === "emu_9f2c1a77b3d84e10");
     expect(emulator?.app_name).toMatch(/^emu_[0-9a-f]{16}$/);
     expect(emulator?.is_installed).toBe(true);
+
+    const hidden = games.find((game) => game.app_name === "ExampleHiddenGame");
+    expect(hidden?.is_installed).toBe(true);
+    expect(hidden?.install?.executable).toBe("/games/example-hidden/example-game");
+    expect(hidden?.install?.install_path).toBe("/games/example-hidden");
   });
 
   test("the Epic cache keeps its library wrapper, timestamp and a DLC entry", () => {
@@ -120,6 +125,11 @@ describe("heronite-data fixture root", () => {
 
     expect(file?.games?.ExampleSideload?.launchKind).toBe("executable");
     expect(file?.games?.ExampleEpicApp?.completionStatusId).toBe("playing");
+
+    const hidden = file?.games?.ExampleHiddenGame;
+    expect(hidden?.launchKind).toBe("executable");
+    expect(hidden?.windowsExecutable).toBe("/games/example-hidden/example-game");
+    expect(hidden?.remappedExecutable).toBe("/games/example-hidden/example-game");
   });
 
   test("the emulator record names its platform profile", () => {
