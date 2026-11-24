@@ -70,6 +70,33 @@
 			"windowsExecutable": "/games/example-hidden/example-game",
 			"remappedExecutable": "/games/example-hidden/example-game"
 		},
+		"ExampleBrowserGame": {
+			"appName": "ExampleBrowserGame",
+			"runner": "sideload",
+			"playniteId": "heroic_ExampleBrowserGame",
+			"source": "manual",
+			"launchKind": "executable",
+			"title": "Example Browser Game",
+			"windowsExecutable": "/games/example-browser/example-game",
+			"remappedExecutable": "/games/example-browser/example-game"
+		},
+		"ExampleUnavailableGame": {
+			"appName": "ExampleUnavailableGame",
+			"runner": "sideload",
+			"playniteId": "heroic_ExampleUnavailableGame",
+			"source": "manual",
+			"launchKind": "unavailable",
+			"title": "Example Unavailable Game"
+		},
+		"ExampleSteamCopyEpic": {
+			"appName": "ExampleSteamCopyEpic",
+			"runner": "legendary",
+			"playniteId": "heroic_ExampleSteamCopyEpic",
+			"source": "epic",
+			"launchKind": "steam-uri",
+			"steamAppId": "440",
+			"title": "Example Steam Copy Epic Game"
+		},
 		"amzn1.adg.product.Example": {
 			"appName": "amzn1.adg.product.Example",
 			"runner": "nile",

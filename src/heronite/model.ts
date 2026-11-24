@@ -203,6 +203,7 @@ export interface LocalGameMeta {
   readonly windowsInstallDirectory?: string;
   readonly windowsExecutable?: string;
   readonly remappedExecutable?: string;
+  readonly heroniteCommand?: string;
   readonly launcherArgs?: string;
   readonly roms?: readonly LocalRom[];
   readonly emulatorName?: string;

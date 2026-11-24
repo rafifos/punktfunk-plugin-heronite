@@ -57,6 +57,30 @@
 			"folder_name": "ExampleEpicDlc",
 			"is_linux_native": false,
 			"canRunOffline": true
+		},
+		{
+			"app_name": "ExampleSteamCopyEpic",
+			"runner": "legendary",
+			"title": "Example Steam Copy Epic Game",
+			"is_installed": false,
+			"install": {
+				"is_dlc": false
+			},
+			"folder_name": "ExampleSteamCopyEpic",
+			"is_linux_native": false,
+			"canRunOffline": true
+		},
+		{
+			"app_name": "ExampleNotInstalledEpic",
+			"runner": "legendary",
+			"title": "Example Not Installed Game",
+			"is_installed": false,
+			"install": {
+				"is_dlc": false
+			},
+			"folder_name": "ExampleNotInstalledEpic",
+			"is_linux_native": false,
+			"canRunOffline": true
 		}
 	],
 	"__timestamp": {
