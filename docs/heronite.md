@@ -12,15 +12,15 @@ sends no telemetry.
 
 ## What it brings together
 
-| Area          | What Heronite does                                                                                                          |
-| ------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| Stores        | Steam, Epic Games, GOG, Amazon Games, Battle.net, EA app, Ubisoft Connect and Rockstar Games; the Xbox app's Microsoft Store / PC Game Pass titles on Windows |
-| Emulation     | Finds your emulators (RetroArch, PCSX2, Dolphin, RPCS3 and 18 more) and turns ROM folders into games with covers            |
-| Wine and Proton | One prefix per game on Linux; installs and updates GE-Proton or Proton-CachyOS in the app; shows ProtonDB and anti-cheat status before you pick |
-| Saves         | Ludusavi backs a game's saves up after each session; Restore brings any backup back                                          |
-| Play time     | Records every session, with weekly, monthly and yearly stats, a backlog goal and a year in review                            |
-| Console mode  | A controller-first layout for a TV or Steam Deck, with Xbox, PlayStation, Nintendo and Steam Deck button hints; opens with `--console` in Steam or when a controller connects |
-| Imports       | Brings games in from Heroic, Lutris, Bottles, Faugus and Playnite without modifying their files, so those launchers keep working |
+| Area            | What Heronite does                                                                                                                                                            |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Stores          | Steam, Epic Games, GOG, Amazon Games, Battle.net, EA app, Ubisoft Connect and Rockstar Games; the Xbox app's Microsoft Store / PC Game Pass titles on Windows                 |
+| Emulation       | Finds your emulators (RetroArch, PCSX2, Dolphin, RPCS3 and 18 more) and turns ROM folders into games with covers                                                              |
+| Wine and Proton | One prefix per game on Linux; installs and updates GE-Proton or Proton-CachyOS in the app; shows ProtonDB and anti-cheat status before you pick                               |
+| Saves           | Ludusavi backs a game's saves up after each session; Restore brings any backup back                                                                                           |
+| Play time       | Records every session, with weekly, monthly and yearly stats, a backlog goal and a year in review                                                                             |
+| Console mode    | A controller-first layout for a TV or Steam Deck, with Xbox, PlayStation, Nintendo and Steam Deck button hints; opens with `--console` in Steam or when a controller connects |
+| Imports         | Brings games in from Heroic, Lutris, Bottles, Faugus and Playnite without modifying their files, so those launchers keep working                                              |
 
 Steam libraries are read without a login. Epic, GOG and Amazon are handled natively by bundled
 helpers (`legendary`, `gogdl`, `nile`). Battle.net, EA app, Ubisoft Connect and Rockstar Games

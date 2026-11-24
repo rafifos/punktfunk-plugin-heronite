@@ -1,5 +1,7 @@
 # punktfunk-plugin-hydra
 
+[![Formatted with Biome](https://img.shields.io/badge/Formatted_with-Biome-60a5fa?style=flat&logo=biome)](https://biomejs.dev/) [![Linted with Biome](https://img.shields.io/badge/Linted_with-Biome-60a5fa?style=flat&logo=biome)](https://biomejs.dev) [![Checked with Biome](https://img.shields.io/badge/Checked_with-Biome-60a5fa?style=flat&logo=biome)](https://biomejs.dev)
+
 A [punktfunk](https://git.unom.io/unom/punktfunk) host plugin that adds your
 [Hydra Launcher](https://hydralauncher.gg) games to the host's library, with Hydra's covers.
 Games start through Hydra, so its Wine/Proton prefix, launch options, playtime and achievements

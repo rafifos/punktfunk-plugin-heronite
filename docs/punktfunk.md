@@ -9,9 +9,9 @@ tracking: the two ends meet on your own network, or through a VPN you control.
 
 Two roles:
 
-- **Host** — the PC you stream *from*. It captures the screen, encodes it on the GPU, sends it, and
+- **Host** — the PC you stream _from_. It captures the screen, encodes it on the GPU, sends it, and
   receives input back.
-- **Client** — the device you stream *to*: phone, tablet, Steam Deck, TV or another PC.
+- **Client** — the device you stream _to_: phone, tablet, Steam Deck, TV or another PC.
 
 A client pairs with a host once and reconnects on its own afterwards. Each connected device gets its
 own **virtual display** at that device's exact resolution and refresh rate, so several people can
@@ -22,11 +22,11 @@ HTTPS on port 47992 with its own certificate, so a browser warns once on first u
 
 ## What it runs on
 
-| End     | Support                                                                                                                      |
-| ------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Host    | Linux on Wayland (KDE Plasma, GNOME, gamescope, Sway, Hyprland, niri through the `biri` fork), or Windows 11 22H2 or later    |
-| Clients | Native apps for macOS, iPhone, iPad, Apple TV, Apple Vision Pro, Android phone and TV, Windows, Linux, Steam Deck and LG webOS TVs; Samsung TVs and browsers in preview |
-| Moonlight | Connects once GameStream compatibility is switched on in the console                                                        |
+| End       | Support                                                                                                                                                                 |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Host      | Linux on Wayland (KDE Plasma, GNOME, gamescope, Sway, Hyprland, niri through the `biri` fork), or Windows 11 22H2 or later                                              |
+| Clients   | Native apps for macOS, iPhone, iPad, Apple TV, Apple Vision Pro, Android phone and TV, Windows, Linux, Steam Deck and LG webOS TVs; Samsung TVs and browsers in preview |
+| Moonlight | Connects once GameStream compatibility is switched on in the console                                                                                                    |
 
 X11 desktops and older Windows are not supported, and macOS is a client only by design. Without a
 working GPU encoder a Linux host falls back to software H.264, and a Windows host cannot stream at
@@ -97,16 +97,16 @@ funded, and nothing is locked behind the price.
 
 ## Vocabulary
 
-| Term             | Meaning                                                                       |
-| ---------------- | ----------------------------------------------------------------------------- |
-| Host             | The PC being streamed from.                                                   |
-| Client           | The device being streamed to.                                                 |
-| Console          | The host's web UI, at `https://<host-ip>:47992`.                              |
-| Pairing          | One-time trust between a host and a client, by approval or PIN.               |
-| Mode             | The resolution and refresh rate a client asks for, `WxH@Hz`.                  |
-| Plugin runner    | `punktfunk-scripting`, the Bun process that loads and supervises plugins.     |
-| Library source   | A plugin that publishes game rows to the host's library.                      |
-| Management API   | The host's HTTPS API under `/api/v1`, used by the console, the SDK and plugins. |
+| Term           | Meaning                                                                         |
+| -------------- | ------------------------------------------------------------------------------- |
+| Host           | The PC being streamed from.                                                     |
+| Client         | The device being streamed to.                                                   |
+| Console        | The host's web UI, at `https://<host-ip>:47992`.                                |
+| Pairing        | One-time trust between a host and a client, by approval or PIN.                 |
+| Mode           | The resolution and refresh rate a client asks for, `WxH@Hz`.                    |
+| Plugin runner  | `punktfunk-scripting`, the Bun process that loads and supervises plugins.       |
+| Library source | A plugin that publishes game rows to the host's library.                        |
+| Management API | The host's HTTPS API under `/api/v1`, used by the console, the SDK and plugins. |
 
 ## Further reading
 
