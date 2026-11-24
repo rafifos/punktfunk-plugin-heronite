@@ -80,10 +80,14 @@ pages or automation. The authoring kit is `@punktfunk/plugin-kit`.
 
 ## Where this repo fits
 
-`punktfunk-plugin-heronite` is a library-source plugin. It reads a desktop game launcher's local
-database, publishes the games it finds to the host's library with that launcher's covers, and
-reports the launcher's downloads to the host's Downloads list. See the [README](../README.md) for
-what gets listed, setup and development.
+`punktfunk-plugin-heronite` is a library-source plugin for [Hydra Launcher](https://hydralauncher.gg).
+It reads Hydra's local LevelDB database, publishes the games Hydra can start to the host's library
+with Hydra's covers, and reports Hydra's downloads to the host's Downloads list. See the
+[README](../README.md) for what gets listed, setup and development.
+
+The name points at where this is going: the repo is a fork of the upstream Hydra plugin, being
+retargeted to [Heronite](./heronite.md). No porting has happened yet, so everything here still
+speaks Hydra.
 
 ## Licence and funding
 
@@ -113,6 +117,8 @@ funded, and nothing is locked behind the price.
 - [Architecture](https://docs.punktfunk.unom.io/docs/developers/architecture)
 - [API reference](https://docs.punktfunk.unom.io/api)
 - [Source code](https://git.unom.io/unom/punktfunk)
+- [GitHub organisation](https://github.com/punktfunk): the host source, plus the PS5, Switch, Tizen,
+  web and webOS client apps
 - [Bugs, ideas and roadmap](https://improve.unom.io/p/punktfunk)
 - [Comparison with Sunshine, Steam Remote Play and Parsec](https://punktfunk.unom.io/en/compare)
 

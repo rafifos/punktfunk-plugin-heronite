@@ -5,6 +5,9 @@ A [punktfunk](https://git.unom.io/unom/punktfunk) host plugin that adds your
 Games start through Hydra, so its Wine/Proton prefix, launch options, playtime and achievements
 apply exactly as when you click **Play** in Hydra.
 
+New to Punktfunk? [What is Punktfunk?](docs/punktfunk.md) covers the host/client model, how a
+stream flows, and where plugins fit.
+
 Needs Hydra 4.x and host 0.41 or later. Download progress needs host 0.43 or
 later; an older host lists the games and ignores the rest.
 
