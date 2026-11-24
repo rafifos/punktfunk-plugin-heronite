@@ -48,6 +48,8 @@ describe("heronite-data fixture root", () => {
       "steam_440",
       "emu_9f2c1a77b3d84e10",
       "ExampleHiddenGame",
+      "ExampleBrowserGame",
+      "ExampleUnavailableGame",
     ]);
 
     const sideload = games.find((game) => game.app_name === "ExampleSideload");
@@ -63,6 +65,13 @@ describe("heronite-data fixture root", () => {
     expect(hidden?.is_installed).toBe(true);
     expect(hidden?.install?.executable).toBe("/games/example-hidden/example-game");
     expect(hidden?.install?.install_path).toBe("/games/example-hidden");
+
+    const browser = games.find((game) => game.app_name === "ExampleBrowserGame");
+    expect(browser?.install?.platform).toBe("Browser");
+    expect(browser?.browserUrl).toBe("https://example.com/play");
+
+    const unavailable = games.find((game) => game.app_name === "ExampleUnavailableGame");
+    expect(unavailable?.is_installed).toBe(true);
   });
 
   test("the Epic cache keeps its library wrapper, timestamp and a DLC entry", () => {
@@ -72,10 +81,14 @@ describe("heronite-data fixture root", () => {
     expect(file?.library?.map((game) => game.app_name)).toEqual([
       "ExampleEpicApp",
       "ExampleEpicAppDlc",
+      "ExampleSteamCopyEpic",
+      "ExampleNotInstalledEpic",
     ]);
     expect(file?.library?.[0]?.runner).toBe("legendary");
     expect(file?.library?.[0]?.install?.install_path).toBe("/games/example-epic");
     expect(file?.library?.[1]?.install?.is_dlc).toBe(true);
+    expect(file?.library?.[2]?.is_installed).toBe(false);
+    expect(file?.library?.[3]?.is_installed).toBe(false);
   });
 
   test("the GOG cache and installed store mix their casing as Heronite does", () => {
@@ -153,7 +166,11 @@ describe("heronite-data fixture root", () => {
 
   test("copies link Collection keys, not metadata keys", () => {
     const file = readStore<CopiesFile>(paths.copies);
-    expect(file?.links).toEqual([["gog_1207658999", "legendary_ExampleEpicApp"]]);
+    expect(file?.links).toEqual([
+      ["gog_1207658999", "legendary_ExampleEpicApp"],
+      ["legendary_ExampleNotInstalledEpic", "nile_amzn1.adg.product.Example"],
+      ["sideload_ExampleUnavailableGame", "sideload_ExampleBrowserGame"],
+    ]);
     expect(file?.preferred).toEqual(["gog_1207658999"]);
   });
 

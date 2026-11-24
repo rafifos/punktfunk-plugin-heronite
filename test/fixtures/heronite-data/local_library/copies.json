@@ -3,6 +3,14 @@
 		[
 			"gog_1207658999",
 			"legendary_ExampleEpicApp"
+		],
+		[
+			"legendary_ExampleNotInstalledEpic",
+			"nile_amzn1.adg.product.Example"
+		],
+		[
+			"sideload_ExampleUnavailableGame",
+			"sideload_ExampleBrowserGame"
 		]
 	],
 	"apart": [
