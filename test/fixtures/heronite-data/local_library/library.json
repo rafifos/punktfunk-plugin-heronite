@@ -1,0 +1,82 @@
+{
+	"games": {
+		"ExampleEpicApp": {
+			"appName": "ExampleEpicApp",
+			"runner": "legendary",
+			"playniteId": "heroic_ExampleEpicApp",
+			"source": "epic",
+			"launchKind": "executable",
+			"title": "Example Epic Game",
+			"completionStatusId": "playing"
+		},
+		"1207658999": {
+			"appName": "1207658999",
+			"runner": "gog",
+			"playniteId": "heroic_1207658999",
+			"source": "gog",
+			"launchKind": "executable",
+			"title": "Example GOG Game",
+			"completionStatusId": "beaten"
+		},
+		"ExampleSideload": {
+			"appName": "ExampleSideload",
+			"runner": "sideload",
+			"playniteId": "heroic_ExampleSideload",
+			"source": "manual",
+			"launchKind": "executable",
+			"title": "Example Sideload Game",
+			"windowsExecutable": "/games/example-sideload/example-game",
+			"remappedExecutable": "/games/example-sideload/example-game"
+		},
+		"steam_440": {
+			"appName": "steam_440",
+			"runner": "sideload",
+			"playniteId": "steam_440",
+			"source": "steam",
+			"launchKind": "steam-uri",
+			"steamAppId": "440",
+			"title": "Example Steam Game",
+			"heroniteSteamAuto": true
+		},
+		"emu_9f2c1a77b3d84e10": {
+			"appName": "emu_9f2c1a77b3d84e10",
+			"runner": "sideload",
+			"playniteId": "emu_9f2c1a77b3d84e10",
+			"source": "emulator",
+			"launchKind": "emulator",
+			"title": "Example ROM Game",
+			"remappedExecutable": "/usr/bin/example-emulator",
+			"launcherArgs": "\"{rom}\"",
+			"roms": [
+				{
+					"name": "Example ROM",
+					"path": "/roms/example.iso"
+				}
+			],
+			"emulatorName": "Example Emulator",
+			"emulatorId": "example-emulator",
+			"emulatorProfileId": "example-ps2",
+			"platformId": "sony_playstation2",
+			"selectedRomPath": "/roms/example.iso",
+			"completionStatusId": "not-played"
+		},
+		"ExampleHiddenGame": {
+			"appName": "ExampleHiddenGame",
+			"runner": "sideload",
+			"playniteId": "heroic_ExampleHiddenGame",
+			"source": "manual",
+			"launchKind": "executable",
+			"title": "Example Hidden Game",
+			"windowsExecutable": "/games/example-hidden/example-game",
+			"remappedExecutable": "/games/example-hidden/example-game"
+		},
+		"amzn1.adg.product.Example": {
+			"appName": "amzn1.adg.product.Example",
+			"runner": "nile",
+			"playniteId": "heroic_amzn1.adg.product.Example",
+			"source": "amazon",
+			"launchKind": "executable",
+			"title": "Example Amazon Game"
+		}
+	}
+}

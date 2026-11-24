@@ -1,0 +1,28 @@
+{
+	"emulators": [
+		{
+			"id": "example-emulator",
+			"definitionId": "pcsx2",
+			"name": "Example Emulator",
+			"executable": "/usr/bin/example-emulator",
+			"installDir": "/opt/example-emulator",
+			"launchKind": "native",
+			"profiles": [
+				{
+					"id": "example-ps2",
+					"definitionProfileId": "ps2",
+					"name": "PlayStation 2",
+					"platformId": "sony_playstation2",
+					"platformName": "PlayStation 2",
+					"arguments": "\"{rom}\"",
+					"extensions": [
+						"iso",
+						"bin",
+						"chd"
+					],
+					"workingDir": "emulator"
+				}
+			]
+		}
+	]
+}

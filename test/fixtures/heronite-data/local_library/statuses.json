@@ -1,0 +1,21 @@
+{
+	"statuses": [
+		{
+			"id": "playing",
+			"name": "Playing",
+			"slug": "playing",
+			"sortOrder": 20
+		},
+		{
+			"id": "beaten",
+			"name": "Beaten",
+			"slug": "beaten",
+			"sortOrder": 10,
+			"playniteId": "Played"
+		}
+	],
+	"lastPlayniteLibraryPath": "/games/playnite/library",
+	"lastPlayniteDriveMap": {
+		"D:": "/mnt/games"
+	}
+}

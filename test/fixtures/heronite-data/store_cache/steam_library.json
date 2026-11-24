@@ -1,0 +1,19 @@
+{
+	"games": [
+		{
+			"appId": "440",
+			"name": "Example Steam Game",
+			"installed": true,
+			"playtimeMinutes": 152
+		},
+		{
+			"appId": "620",
+			"name": "Example Other Steam Game",
+			"installed": false,
+			"playtimeMinutes": 0,
+			"lastPlayed": 1760000000
+		}
+	],
+	"updatedAt": "2026-10-13T00:00:00Z",
+	"source": "client"
+}
