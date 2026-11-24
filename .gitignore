@@ -1,6 +1,5 @@
 node_modules
 dist
+__references/
 *.log
 .DS_Store
-# LevelDB keeps its live writes in a .log; the fixture needs it.
-!test/fixtures/hydra-db/*.log

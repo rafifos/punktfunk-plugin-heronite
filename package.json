@@ -1,94 +1,150 @@
 {
-  "name": "@punktfunk/plugin-hydra",
-  "version": "0.2.2",
+  "name": "@rafifos/plugin-heronite",
+  "version": "0.1.0",
   "private": false,
   "type": "module",
-  "description": "Punktfunk plugin: adds your Hydra Launcher games to the host's library, starts them through Hydra, and shows Hydra's downloads on the host.",
+  "description": "Punktfunk plugin: publishes Heronite's games to the host's library and starts them through Heronite.",
   "license": "MIT OR Apache-2.0",
-  "homepage": "https://git.unom.io/unom/punktfunk-plugin-hydra",
+  "homepage": "https://github.com/rafifos/punktfunk-plugin-heronite",
   "repository": {
     "type": "git",
-    "url": "https://git.unom.io/unom/punktfunk-plugin-hydra.git"
+    "url": "https://github.com/rafifos/punktfunk-plugin-heronite.git"
   },
   "keywords": [
     "punktfunk",
     "plugin",
-    "hydra",
-    "hydra-launcher",
+    "heronite",
     "game-library",
     "game-streaming"
   ],
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "bin": {
-    "punktfunk-plugin-hydra": "./dist/cli.js"
+    "punktfunk-plugin-heronite": "./dist/cli.js"
   },
   "files": [
     "dist"
   ],
   "punktfunk": {
     "schema": 1,
-    "id": "hydra",
+    "id": "heronite",
     "reads": [
-      "~/.config/hydralauncher/hydra-db",
-      "~/snap/hydralauncher/current/.config/hydralauncher/hydra-db"
+      "~/.local/share/heronite",
+      "~/.var/app/app.heronite.Heronite/data/heronite"
     ],
     "files": [
-      "~/AppData/Roaming/hydralauncher/hydra-db"
+      "~/AppData/Roaming/heronite/data"
     ],
     "exec": {
       "run": {
-        "exe": "hydralauncher",
+        "exe": "heronite-rs",
         "args": [
-          "hydralauncher://run?shop={shop}&objectId={game}"
+          "--no-gui",
+          "--launch",
+          "{runner}",
+          "{appName}"
         ],
         "params": {
-          "shop": "id",
-          "game": "id"
+          "runner": "id",
+          "appName": "name"
+        }
+      },
+      "run-program": {
+        "exe": "{program}",
+        "args": [
+          "--no-gui",
+          "--launch",
+          "{runner}",
+          "{appName}"
+        ],
+        "params": {
+          "program": "path",
+          "runner": "id",
+          "appName": "name"
+        }
+      },
+      "run-flatpak": {
+        "exe": "flatpak",
+        "args": [
+          "run",
+          "app.heronite.Heronite",
+          "--no-gui",
+          "--launch",
+          "{runner}",
+          "{appName}"
+        ],
+        "params": {
+          "runner": "id",
+          "appName": "name"
         }
       },
       "open": {
         "exe": "xdg-open",
         "args": [
-          "hydralauncher://run?shop={shop}&objectId={game}"
+          "{url}"
         ],
         "params": {
-          "shop": "id",
-          "game": "id"
+          "url": "name"
         }
       },
       "open-windows": {
         "exe": "explorer.exe",
         "args": [
-          "hydralauncher://run?shop={shop}&objectId={game}"
+          "{url}"
         ],
         "params": {
-          "shop": "id",
-          "game": "id"
+          "url": "name"
         }
       },
       "window": {
-        "exe": "xdg-open",
+        "exe": "heronite-rs",
+        "args": []
+      },
+      "window-program": {
+        "exe": "{program}",
+        "args": [],
+        "params": {
+          "program": "path"
+        }
+      },
+      "window-flatpak": {
+        "exe": "flatpak",
         "args": [
-          "hydralauncher://"
+          "run",
+          "app.heronite.Heronite"
         ]
       },
-      "window-windows": {
-        "exe": "explorer.exe",
+      "console": {
+        "exe": "heronite-rs",
         "args": [
-          "hydralauncher://"
+          "--console",
+          "--fullscreen"
         ]
       },
-      "big-picture": {
-        "exe": "hydralauncher",
+      "console-program": {
+        "exe": "{program}",
         "args": [
-          "--big-picture"
+          "--console",
+          "--fullscreen"
+        ],
+        "params": {
+          "program": "path"
+        }
+      },
+      "console-flatpak": {
+        "exe": "flatpak",
+        "args": [
+          "run",
+          "app.heronite.Heronite",
+          "--console",
+          "--fullscreen"
         ]
       }
     }
   },
   "publishConfig": {
-    "registry": "https://git.unom.io/api/packages/unom/npm/"
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
