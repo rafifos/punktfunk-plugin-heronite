@@ -1,0 +1,71 @@
+{
+	"queue": [
+		{
+			"params": {
+				"appName": "amzn1.adg.product.Example",
+				"path": "/games/Example Amazon Game",
+				"installDlcs": [],
+				"sdlList": [],
+				"installLanguage": "en",
+				"runner": "nile",
+				"platformToInstall": "Windows",
+				"gameInfo": {
+					"app_name": "amzn1.adg.product.Example",
+					"title": "Example Amazon Game",
+					"art_square": "https://cdn.example/amazon-tall.jpg",
+					"folder_name": "Example Amazon Game"
+				},
+				"size": "12.5 GiB"
+			},
+			"type": "install",
+			"addToQueueTime": 1790053000000,
+			"startTime": 1790053100000,
+			"endTime": 0
+		},
+		{
+			"params": {
+				"appName": "ExampleEpicAppDlc",
+				"path": "/games/example-epic",
+				"installDlcs": [],
+				"sdlList": [],
+				"installLanguage": "en",
+				"runner": "legendary",
+				"platformToInstall": "Windows",
+				"gameInfo": {
+					"app_name": "ExampleEpicAppDlc",
+					"title": "Example Epic Game DLC"
+				},
+				"size": "1.5 GiB"
+			},
+			"type": "install",
+			"addToQueueTime": 1790053200000,
+			"startTime": 0,
+			"endTime": 0
+		}
+	],
+	"finished": [
+		{
+			"params": {
+				"appName": "ExampleFailedEpicApp",
+				"path": "/games/Example Failed",
+				"installDlcs": [],
+				"sdlList": [],
+				"installLanguage": "en",
+				"runner": "legendary",
+				"platformToInstall": "Windows",
+				"gameInfo": {
+					"app_name": "ExampleFailedEpicApp",
+					"title": "Example Failed Game"
+				},
+				"size": "8.0 GiB"
+			},
+			"type": "install",
+			"addToQueueTime": 1790051000000,
+			"startTime": 1790051010000,
+			"endTime": 1790051100000,
+			"status": "error",
+			"error": "Example failure: disk full"
+		}
+	],
+	"userPaused": false
+}

@@ -1,0 +1,37 @@
+{
+	"games": [
+		{
+			"app_name": "1207658999",
+			"runner": "gog",
+			"title": "Example GOG Game",
+			"art_cover": "https://cdn.example/gog-cover.jpg",
+			"art_square": "https://cdn.example/gog-vertical.jpg",
+			"art_background": "https://cdn.example/gog-bg.webp",
+			"art_icon": "https://cdn.example/gog-icon.jpg",
+			"description": "A hand-authored GOG game.",
+			"developer": "Example Studio",
+			"folder_name": "Example GOG Game",
+			"is_installed": false,
+			"is_linux_native": true,
+			"is_mac_native": false,
+			"canRunOffline": true,
+			"cloud_save_enabled": false,
+			"install": {
+				"is_dlc": false
+			},
+			"extra": {
+				"about": {
+					"description": "A hand-authored GOG game."
+				},
+				"genres": [
+					"role-playing"
+				],
+				"releaseDate": "2015-05-19"
+			},
+			"store_url": "https://www.gog.com/game/example"
+		}
+	],
+	"__timestamp": {
+		"games": "Tue Oct 06 2026 21:05:00 GMT-0300 (Local Time)"
+	}
+}

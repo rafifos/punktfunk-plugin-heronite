@@ -1,0 +1,25 @@
+{
+	"queue": [
+		{
+			"params": {
+				"appName": "amzn1.adg.product.Example",
+				"path": "/games/Example Amazon Game",
+				"installDlcs": [],
+				"sdlList": [],
+				"installLanguage": "en",
+				"runner": "nile",
+				"platformToInstall": "Windows",
+				"gameInfo": {
+					"app_name": "amzn1.adg.product.Example",
+					"title": "Example Amazon Game"
+				},
+				"size": "12.5 GiB"
+			},
+			"type": "install",
+			"addToQueueTime": 1790053000000,
+			"startTime": 0,
+			"endTime": 0
+		}
+	],
+	"userPaused": true
+}

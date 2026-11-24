@@ -1,0 +1,18 @@
+{
+	"installed": [
+		{
+			"appName": "1207658999",
+			"platform": "linux",
+			"install_path": "/games/Example GOG Game",
+			"install_size": "12.5 GiB",
+			"version": "1.0.0",
+			"language": "en-US",
+			"installedDLCs": [],
+			"versionEtag": "\"abc123\"",
+			"buildId": "12345",
+			"pinnedVersion": false,
+			"executable": "",
+			"is_dlc": false
+		}
+	]
+}

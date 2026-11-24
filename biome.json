@@ -35,6 +35,14 @@
       }
     }
   },
+  "overrides": [
+    {
+      "includes": ["test/fixtures/**"],
+      "formatter": {
+        "enabled": false
+      }
+    }
+  ],
   "assist": {
     "actions": {
       "source": {

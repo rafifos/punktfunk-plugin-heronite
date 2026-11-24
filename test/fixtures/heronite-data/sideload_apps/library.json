@@ -1,0 +1,66 @@
+{
+	"games": [
+		{
+			"runner": "sideload",
+			"app_name": "ExampleSideload",
+			"title": "Example Sideload Game",
+			"art_cover": "https://cdn.example/sideload-wide.jpg",
+			"art_square": "https://cdn.example/sideload-tall.jpg",
+			"developer": "Example Studio",
+			"description": "A hand-authored sideload executable.",
+			"is_installed": true,
+			"install": {
+				"executable": "/games/example-sideload/example-game",
+				"platform": "linux",
+				"is_dlc": false,
+				"install_path": "/games/example-sideload",
+				"install_size": "1.00 GiB",
+				"version": ""
+			},
+			"folder_name": "/games/example-sideload",
+			"is_linux_native": true,
+			"is_mac_native": false,
+			"canRunOffline": true,
+			"browserUrl": "",
+			"customUserAgent": "",
+			"launchFullScreen": false,
+			"cloud_save_enabled": false
+		},
+		{
+			"runner": "sideload",
+			"app_name": "steam_440",
+			"title": "Example Steam Game",
+			"art_cover": "https://cdn.example/steam-wide.jpg",
+			"art_square": "https://cdn.example/steam-tall.jpg",
+			"is_installed": true,
+			"install": {},
+			"folder_name": "Example Steam Game",
+			"canRunOffline": true
+		},
+		{
+			"runner": "sideload",
+			"app_name": "emu_9f2c1a77b3d84e10",
+			"title": "Example ROM Game",
+			"art_square": "https://cdn.example/rom-tall.jpg",
+			"is_installed": true,
+			"install": {
+				"executable": "/usr/bin/example-emulator",
+				"platform": "linux",
+				"is_dlc": false,
+				"install_path": "/roms"
+			},
+			"folder_name": "/roms",
+			"is_linux_native": true,
+			"canRunOffline": true
+		},
+		{
+			"runner": "sideload",
+			"app_name": "ExampleHiddenGame",
+			"title": "Example Hidden Game",
+			"is_installed": false,
+			"install": {},
+			"folder_name": "Example Hidden Game",
+			"canRunOffline": true
+		}
+	]
+}

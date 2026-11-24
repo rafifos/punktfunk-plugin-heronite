@@ -1,0 +1,12 @@
+{
+	"ExampleEpicApp": {
+		"firstPlayed": "2026-10-01T18:30:00.000Z",
+		"lastPlayed": "2026-10-07T12:45:00.000Z",
+		"totalPlayed": 152
+	},
+	"steam_440": {
+		"firstPlayed": "",
+		"lastPlayed": "",
+		"totalPlayed": 0
+	}
+}

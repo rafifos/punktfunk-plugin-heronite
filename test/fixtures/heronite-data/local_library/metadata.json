@@ -1,0 +1,78 @@
+{
+	"games": {
+		"legendary:ExampleEpicApp": {
+			"appName": "ExampleEpicApp",
+			"runner": "legendary",
+			"igdbId": 1234,
+			"steamAppId": "440",
+			"title": "Example Epic Game",
+			"description": "A hand-authored Epic game.",
+			"releaseDate": "2020-03-20",
+			"developers": [
+				"Example Studio"
+			],
+			"publishers": [
+				"Example Publisher"
+			],
+			"genres": [
+				"Shooter"
+			],
+			"themes": [
+				"Action"
+			],
+			"gameModes": [
+				"Single player"
+			],
+			"platforms": [
+				"PC"
+			],
+			"features": [
+				"Cloud saves"
+			],
+			"ageRatings": [
+				{
+					"system": "esrb",
+					"rating": "T",
+					"descriptors": [
+						"Violence"
+					]
+				}
+			],
+			"coverUrl": "https://cdn.example/meta-cover.jpg",
+			"heroUrl": "https://cdn.example/meta-hero.jpg",
+			"fieldSources": {
+				"title": "igdb",
+				"cover": "steam"
+			},
+			"fetchedAt": "2026-10-07T12:00:00.000Z"
+		},
+		"gog:1207658999": {
+			"appName": "1207658999",
+			"runner": "gog",
+			"title": "Example GOG Game",
+			"developers": [
+				"Example Studio"
+			],
+			"publishers": [
+				"Example Publisher"
+			],
+			"genres": [
+				"Role-playing"
+			],
+			"platforms": [
+				"PC"
+			]
+		},
+		"sideload:emu_9f2c1a77b3d84e10": {
+			"appName": "emu_9f2c1a77b3d84e10",
+			"runner": "sideload",
+			"title": "Example ROM Game",
+			"platforms": [
+				"PlayStation 2"
+			],
+			"genres": [
+				"Action"
+			]
+		}
+	}
+}

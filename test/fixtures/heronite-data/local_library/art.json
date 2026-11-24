@@ -1,0 +1,12 @@
+{
+	"games": {
+		"gog:1207658999": {
+			"coverUrl": "localart://art/gog_1207658999/cover-1790051478808.png",
+			"heroUrl": "localart://art/gog_1207658999/hero-1790051478810.jpg",
+			"logoUrl": "https://cdn.example/my-logo.png"
+		},
+		"sideload:steam_440": {
+			"coverUrl": "https://cdn.example/steam-art.jpg"
+		}
+	}
+}

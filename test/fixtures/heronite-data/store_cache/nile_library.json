@@ -1,0 +1,37 @@
+{
+	"library": [
+		{
+			"runner": "nile",
+			"app_name": "amzn1.adg.product.Example",
+			"title": "Example Amazon Game",
+			"art_cover": "https://cdn.example/amazon-wide.jpg",
+			"art_square": "https://cdn.example/amazon-tall.jpg",
+			"art_logo": "https://cdn.example/amazon-logo.png",
+			"art_background": "https://cdn.example/amazon-bg.jpg",
+			"developer": "Example Studio",
+			"description": "A hand-authored Amazon game that is still downloading.",
+			"is_installed": false,
+			"install": {
+				"is_dlc": false,
+				"install_size": "12.5 GiB",
+				"version": "1.0",
+				"platform": "Windows"
+			},
+			"folder_name": "Example Amazon Game",
+			"is_linux_native": false,
+			"is_mac_native": false,
+			"cloud_save_enabled": false,
+			"canRunOffline": true,
+			"extra": {
+				"genres": [
+					"action"
+				],
+				"releaseDate": "2023-01-01",
+				"screenshots": []
+			}
+		}
+	],
+	"__timestamp": {
+		"library": "Tue Oct 06 2026 21:10:00 GMT-0300 (Local Time)"
+	}
+}

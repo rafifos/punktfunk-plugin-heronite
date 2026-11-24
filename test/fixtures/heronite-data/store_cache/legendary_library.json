@@ -1,0 +1,65 @@
+{
+	"library": [
+		{
+			"app_name": "ExampleEpicApp",
+			"runner": "legendary",
+			"title": "Example Epic Game",
+			"art_cover": "https://cdn.example/epic-wide.jpg",
+			"art_square": "https://cdn.example/epic-tall.jpg",
+			"art_logo": "https://cdn.example/epic-logo.png",
+			"cloud_save_enabled": true,
+			"developer": "Example Studio",
+			"description": "A hand-authored Epic game.",
+			"folder_name": "ExampleEpicGame",
+			"is_installed": true,
+			"isEAManaged": false,
+			"isUbisoftManaged": false,
+			"is_linux_native": false,
+			"is_mac_native": false,
+			"canRunOffline": true,
+			"namespace": "example",
+			"save_folder": "ExampleEpicGame/",
+			"store_url": "https://store.epicgames.com/en-US/p/example",
+			"install": {
+				"executable": "/games/example-epic/example.exe",
+				"install_path": "/games/example-epic",
+				"install_size": "25.87 GiB",
+				"is_dlc": false,
+				"version": "1.2.3",
+				"platform": "Windows"
+			},
+			"extra": {
+				"about": {
+					"description": "A hand-authored Epic game.",
+					"shortDescription": "Example"
+				},
+				"reqs": []
+			},
+			"dlcList": [
+				{
+					"app_name": "ExampleEpicAppDlc",
+					"title": "Example Epic Game DLC"
+				}
+			]
+		},
+		{
+			"app_name": "ExampleEpicAppDlc",
+			"runner": "legendary",
+			"title": "Example Epic Game DLC",
+			"is_installed": true,
+			"install": {
+				"is_dlc": true,
+				"install_path": "/games/example-epic",
+				"install_size": "1.5 GiB",
+				"version": "1.0.0",
+				"platform": "Windows"
+			},
+			"folder_name": "ExampleEpicDlc",
+			"is_linux_native": false,
+			"canRunOffline": true
+		}
+	],
+	"__timestamp": {
+		"library": "Tue Oct 06 2026 21:00:00 GMT-0300 (Local Time)"
+	}
+}
