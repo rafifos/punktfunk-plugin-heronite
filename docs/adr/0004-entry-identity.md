@@ -1,0 +1,3 @@
+# Identify library entries by Heronite's metadata key
+
+A provider entry's external id is `<runner>:<appName>` — the same key Heronite's overlay files use — so a host library id reads `heronite:steam:620` or `heronite:sideload:steam_620`. This keeps the id readable, stable across scans, and directly convertible back to the runner and app name that `heronite://launch` needs. It also matches the vocabulary of the overlay files and of Punktfunk's `heroic` launch kind. Changing it later breaks every client's pins and cached art, so it is recorded here deliberately; the alternative `<runner>_<appName>` (Heronite's in-memory library key) was rejected because it reads as one opaque token and parses less obviously.

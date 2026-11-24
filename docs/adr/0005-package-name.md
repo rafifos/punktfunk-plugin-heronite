@@ -1,0 +1,3 @@
+# Publish as `@rafifos/plugin-heronite`
+
+Punktfunk's runner discovers plugins by directory name under `<config>/plugins/node_modules`: unscoped packages must start with `punktfunk-plugin-`, and scoped ones must be `@scope/plugin-*`. `@rafifos/punktfunk-plugin-heronite` installs successfully but is never discovered, silently. The package is therefore published as `@rafifos/plugin-heronite`, scoped to the maintainer and installed with `--allow-public-registry`; the manifest `id` stays `heronite`, which is what the host, the console and the library ids use. Sibling packages in the same scope are free to use any name — the `plugin-` rule applies only to the package the runner starts.

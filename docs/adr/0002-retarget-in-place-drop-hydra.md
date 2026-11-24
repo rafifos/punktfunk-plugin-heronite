@@ -1,0 +1,3 @@
+# Retarget this repository in place and drop Hydra
+
+This repository began as a fork of the upstream Hydra plugin but is now its own project, maintained by a Punktfunk user with no affiliation to the Punktfunk project. It keeps the package scaffold, test patterns, and git history, but removes the Hydra database reader, record parser, and their tests, and publishes one identity: plugin id `heronite`. The `upstream` remote is a read-only reference and is never merged. Hydra users keep installing the upstream Hydra plugin; library ids, pins, and art caches from `hydra:*` do not carry over, which is correct because the source launcher is different.

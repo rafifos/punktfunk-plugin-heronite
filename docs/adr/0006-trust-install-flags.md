@@ -1,0 +1,3 @@
+# Trust Heronite's install flags; never check game files
+
+A plugin is sandboxed to `/usr`, its own code and state, the paths its manifest declares and the folders the operator grants. A game's install folder is none of those, so `fs.stat` on an executable or a ROM returns "missing" even when the file is there. The scan therefore believes Heronite's `is_installed` flag and the executable and ROM paths it records, and never probes the filesystem for a game. The consequence is deliberate: a game deleted outside Heronite keeps appearing until Heronite refreshes its own state. The alternative — asking the operator to grant every game folder — would produce a permission prompt per game and a worse library than the launcher it mirrors.
