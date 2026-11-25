@@ -47,6 +47,14 @@ game ends. Let punktfunk own the compositor too: if your launch options wrap the
 launcher's gamescope (goverlay, for example), use a profile without gamescope for streaming and
 keep only the overlay tools.
 
+A streamed game entry also waits for the game's **own window** before the client shows it. The host
+reports the game `running` as soon as its process is up, but holds its splash until the window
+reaches the screen — "often far later than its process: a Proton prefix build, a splash on a black
+window" — and a chain like Heronite → Steam → goverlay can outlast the client's patience. For that
+shape, stream the **Heronite** tile instead: a launcher entry keeps the session up until you leave
+it, so you get Heronite's own window in the stream and start the game from there. That is the flow
+to prefer whenever a launcher sits in front of the game.
+
 The protocol fallback starts Heronite on the host's own screen. A client that asks for its own mode
 makes the host spin up a dedicated display whose lifetime is the launched command; a hand-off
 command exits at once, so the display goes away and the client reconnects. Give the plugin a

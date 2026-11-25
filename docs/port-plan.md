@@ -286,6 +286,13 @@ code:
   milliseconds (measured: 58 ms), so gamescope ends and the display is torn down even though the
   game starts in the other instance. The remedy is operational — quit Heronite, or turn off
   **Start with the system**, before streaming — and the `paths` verb now says so.
+- **The host waits for the game's own window, not the launcher's.** Its state machine is
+  `launching → running → window`, and `window` is documented as often far later than the process
+  ("a Proton prefix build, a splash on a black window"). A multi-launcher chain can therefore
+  outlast the client's patience even when the launch is correct. The plan's `detect` hints cannot
+  shorten that. The documented flow for a launcher chain is to stream the **launcher tile**
+  (`role: launcher` keeps the session up until the client leaves) and start the game from inside
+  it.
 
 ## Known limitations
 
