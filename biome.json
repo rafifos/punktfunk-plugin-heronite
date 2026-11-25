@@ -7,7 +7,7 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!node_modules", "!.agents", "!CHANGELOG.md"]
+    "includes": ["**", "!node_modules", "!.agents", "!CHANGELOG.md", "!assets/heronite-marks"]
   },
   "formatter": {
     "enabled": true,
