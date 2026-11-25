@@ -59,7 +59,10 @@ jobs:
         env:
           REF: ${{ inputs.ref }}
         run: |
-          tag="${REF#v}"
+          # Release Please names a package tag `<component>-v<version>` unless told otherwise, so
+          # take the suffix after the last `v`: both `plugin-heronite-v0.1.0` and `v0.1.0` land on
+          # the version.
+          tag="${REF##*v}"
           version="$(node -p "require('./package.json').version")"
           if [ "$tag" != "$version" ]; then
             echo "::error::tag $REF does not match package.json $version"
@@ -72,8 +75,9 @@ jobs:
           REF: ${{ inputs.ref }}
         run: |
           name="$(node -p "require('./package.json').name")"
-          if npm view "$name@${REF#v}" version >/dev/null 2>&1; then
-            echo "::notice::$name@${REF#v} is already published"
+          version="${REF##*v}"
+          if npm view "$name@$version" version >/dev/null 2>&1; then
+            echo "::notice::$name@$version is already published"
             echo "publish=false" >>"$GITHUB_OUTPUT"
           else
             echo "publish=true" >>"$GITHUB_OUTPUT"

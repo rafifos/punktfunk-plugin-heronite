@@ -168,7 +168,12 @@ updates) a _chore: release_ pull request:
 The release pull request's CI run waits for a maintainer to approve it — GitHub treats a pull request
 opened by `github-actions[bot]` as outside-collaborator work — so approve the run, then merge.
 
-Merge the release PR to ship. The version in `package.json`, the changelog entry, the `vX.Y.Z` tag
+Release Please tags a package as `<component>-v<version>`, so the first release is
+`plugin-heronite-v0.1.0`, not `v0.1.0`. `publish.yml` reads the version from the end of the tag,
+and `include-component-in-tag` is left at its default on purpose: switching it now would make
+release-please look for a `v0.1.0` tag that does not exist and bootstrap again.
+
+Merge the release PR to ship. The version in `package.json`, the changelog entry, the `plugin-heronite-vX.Y.Z` tag
 and the npm package therefore always agree. `publish.yml` also takes a tag by hand
 (_Actions → Publish → Run workflow_) to re-run one that failed, and it is safe to re-run: a version
 already on the registry is a no-op.
@@ -196,7 +201,7 @@ immutable, so a `0.0.0` stands in the version list forever, and unpublishing it 
 that the trust binding hangs from. Merge the release pull request first, then, from the tag:
 
 ```sh
-git checkout v0.1.0
+git checkout plugin-heronite-v0.1.0
 npm login                 # 2FA prompt
 bun install --frozen-lockfile
 npm publish --access public
