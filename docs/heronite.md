@@ -55,9 +55,12 @@ in only when you switch its import on.
 
 ## Where this repo fits
 
-This fork is meant to read Heronite's `local_library` and publish its games to a
-[Punktfunk](./punktfunk.md) host. That port has not happened yet: the plugin still reads Hydra's
-database, as the [README](../README.md) describes.
+This repository is the Punktfunk link for Heronite: it reads Heronite's data folder and publishes
+its games to a [Punktfunk](./punktfunk.md) host as `heronite:<runner>:<appName>`, starts every
+title through Heronite, mirrors Heronite's download queue, and adds a read-only per-game tab. It
+never writes to Heronite's files and never starts a game's own executable, so Heronite's prefixes,
+emulator profiles and playtime stay authoritative. The port is done; see the
+[README](../README.md) for setup and the [0.1.0 release note](./release-0.1.0.md).
 
 ## Further reading
 

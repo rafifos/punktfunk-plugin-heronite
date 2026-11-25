@@ -213,15 +213,48 @@ so portable copies and odd installs work without widening the manifest.
 ## Milestones
 
 1. **Scaffold and identity** — rename the package, write the manifest, remove the Hydra code and
-   fixtures, keep build/test/typecheck green, README stub.
-2. **Data root, model and parser** — paths, tolerant JSON, types, fixtures, `detect` and `paths`.
+   fixtures, keep build/test/typecheck green, README stub. **Done.**
+2. **Data root, model and parser** — paths, tolerant JSON, types, fixtures, `detect` and
+   `paths`. **Done.**
 3. **Scan and entries** — library assembly, filters, copy collapse, Steam join, launch selection,
-   art, metadata, detect hints, launcher tiles, `scan --preview`.
+   art, metadata, detect hints, launcher tiles, `scan --preview`. **Done.**
 4. **Plugin wiring** — `library-with-ui`, sync loop, watch and poll, settings, CLI verbs and
-   `parity`.
+   `parity`. **Done.**
 5. **Downloads and install asks** — queue mapping, reporter loop, install handlers, wait-on-launch.
-6. **Per-game tab** — `serveUi({ game })`, playtime, status, sessions.
+   **Done.**
+6. **Per-game tab** — `serveUi({ game })`, playtime, status, sessions. **Done.**
 7. **Docs and first release** — README, the two primers, `v0.1.0`, npm publish, install check.
+   **Docs done; the tag is local. Publishing to npm and launching a game from a real host are the
+   remaining operator steps.**
+
+## What changed while building
+
+Decisions taken during implementation, recorded so the plan does not read more certain than the
+code:
+
+- **The environment marker.** Heronite (a Heroic fork) stamps no `HERONITE_*` variable on games,
+  but it does stamp `HEROIC_APP_NAME` with the app name on executable, store, launcher, client and
+  Xbox launches — not on emulator or `steam-uri` launches. `detect.env_marker` uses that for the
+  launches that have it, and omits it for the two that do not.
+- **Queue-only games.** A download Heronite started can be in `download-manager.json` before the
+  store cache records it. Such a game is admitted from the queue element's `gameInfo` snapshot, so
+  a downloading title appears at once instead of after the store refresh.
+- **A protocol URL over the cap drops the entry.** The host caps an exec parameter at 128 bytes;
+  the fallback transport is not applied to such a title even when another transport would fit,
+  because the transport is chosen per install. This is the plan's accepted limitation.
+- **`plugin-kit` pinned to `0.15.0`**, exactly, because `kit/library-with-ui.ts` reproduces the
+  internals of `defineLibraryPlugin`.
+- **A `game` factory on the local definition type.** `defineLibraryPluginWithUi` takes
+  `game?: (config: ConfigService) => ServeUiGame`, so the tab can read the current settings on
+  every request without re-reading the module.
+- **A second fixture root.** `test/fixtures/heronite-data-paused` holds only a paused
+  `download-manager.json`, so the paused mapping is pinned without a second full library.
+- **Real-install drift.** The plugin was run against a real Steam-only Heronite 1.8 folder with
+  `legendary_library.json`, `gog_library.json`, `nile_library.json`, `art.json`, `emulators.json`,
+  `copies.json`, `statuses.json` and `download-manager.json` absent; every one is optional and the
+  scan produced the installed Steam and sideload entries with art and detect hints. A future
+  Heronite release that changes a file is handled by updating `model.ts` and the fixtures
+  (ADR-0003).
 
 ## Known limitations
 
