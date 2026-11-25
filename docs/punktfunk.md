@@ -80,14 +80,15 @@ pages or automation. The authoring kit is `@punktfunk/plugin-kit`.
 
 ## Where this repo fits
 
-`punktfunk-plugin-heronite` is a library-source plugin for [Hydra Launcher](https://hydralauncher.gg).
-It reads Hydra's local LevelDB database, publishes the games Hydra can start to the host's library
-with Hydra's covers, and reports Hydra's downloads to the host's Downloads list. See the
-[README](../README.md) for what gets listed, setup and development.
+`punktfunk-plugin-heronite` is the library-source plugin for
+[Heronite](./heronite.md). It reads Heronite's data folder, publishes the games Heronite can start
+to the host's library with Heronite's art and metadata, starts every title through Heronite itself,
+mirrors Heronite's store download queue in the host's Downloads list, and adds a read-only per-game
+tab with playtime and completion status. See the [README](../README.md) for what gets listed,
+setup and development.
 
-The name points at where this is going: the repo is a fork of the upstream Hydra plugin, being
-retargeted to [Heronite](./heronite.md). No porting has happened yet, so everything here still
-speaks Hydra.
+The name is historical: the repo began as a fork of the upstream Hydra plugin and was retargeted to
+Heronite in place, so the git history still speaks Hydra while the code does not.
 
 ## Licence and funding
 

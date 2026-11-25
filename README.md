@@ -1,15 +1,59 @@
-# punktfunk-plugin-heronite
+# @rafifos/plugin-heronite
 
-A [Punktfunk](https://git.unom.io/unom/punktfunk) host plugin that will publish your
-[Heronite](https://heronite.app) games to the host's library and start them through Heronite, so
-Heronite's Wine/Proton setup, playtime and console mode apply.
+[![Formatted with Biome](https://img.shields.io/badge/Formatted_with-Biome-60a5fa?style=flat&logo=biome)](https://biomejs.dev/) [![Linted with Biome](https://img.shields.io/badge/Linted_with-Biome-60a5fa?style=flat&logo=biome)](https://biomejs.dev) [![Checked with Biome](https://img.shields.io/badge/Checked_with-Biome-60a5fa?style=flat&logo=biome)](https://biomejs.dev)
 
-**Pre-release.** Games, launcher tiles, settings, downloads and the per-game tab work; the docs and
-the first release are still coming. See the [port plan](docs/port-plan.md) and the
-[ADRs](docs/adr/).
+A [Punktfunk](https://git.unom.io/unom/punktfunk) host plugin that publishes your
+[Heronite](https://heronite.app) games to the host's library and starts them through Heronite, so
+Heronite's Wine/Proton prefix, emulator profile, playtime and console mode apply exactly as when
+you press **Play** in Heronite.
 
 New to Punktfunk? [What is Punktfunk?](docs/punktfunk.md) covers the host/client model, how a
-stream flows, and where plugins fit.
+stream flows, and where plugins fit. New to Heronite? [What is Heronite?](docs/heronite.md)
+covers the launcher this plugin reads.
+
+Needs Heronite 1.8 and host 0.43 or later. An older host lists the games and ignores the rest.
+
+## What gets listed
+
+- Every Heronite game it can start that is installed: a Steam title, a store game from Epic, GOG
+  or Amazon, a sideloaded executable, an emulator ROM, or a game another launcher owns.
+- Every game Heronite is downloading, marked as not installed with the size it recorded.
+- A **Heronite** tile that opens Heronite's window, and a **Heronite Console** tile that opens its
+  controller interface. Either can be switched off in the settings; the console tile needs a known
+  `heronite-rs`.
+
+Left out: games only in a store's catalogue, hidden games, DLCs, browser titles, and the `zoom`
+runner. A copy group you linked in Heronite appears once, as the first installed copy.
+
+## Setup
+
+**Linux package (deb, rpm, Arch) or AppImage:** nothing to set. Heronite's data in
+`~/.local/share/heronite` is found by itself, and launches use `heronite-rs` when it is on `PATH`.
+Without it, the plugin opens the `heronite://launch` link instead, so a desktop entry that handles
+`heronite://` must exist — the package installs one.
+
+**Flatpak:** nothing to set. The Flatpak's data folder
+(`~/.var/app/app.heronite.Heronite/data/heronite`) is found by itself, and launches go through
+`flatpak run app.heronite.Heronite`.
+
+**Windows installer:** the plugin runner cannot read your profile by itself. The manifest names
+`%APPDATA%\heronite\data`, so a current host opens it when the plugin installs; an older host asks
+for it under **Library** → **Game sources** → Heronite. Windows is untested so far.
+
+**Portable copy, or a data folder elsewhere:** set **Heronite data folder** to the folder holding
+`store` and `local_library`. If the program is not on `PATH`, set **Heronite program folder** too;
+that is what enables headless launches and the console tile on a portable install.
+
+Pause, cancel and remove stay in Heronite: it owns the files.
+
+## Install
+
+```sh
+punktfunk-host plugins add @rafifos/plugin-heronite --allow-public-registry
+```
+
+A package outside the `@punktfunk` scope needs `--allow-public-registry`. Remove it with
+`punktfunk-host plugins remove @rafifos/plugin-heronite`.
 
 ## Develop
 
@@ -18,6 +62,8 @@ bun install
 bun test
 bunx tsc --noEmit
 bunx biome check
+bun run build          # dist/index.js and dist/cli.js
+bun pm pack            # the tarball a host installs
 ```
 
 The CLI works against a real Heronite install, or a folder you point it at with the settings:
@@ -37,7 +83,15 @@ bun src/cli.ts uninstall                       # remove the entries and release 
 ```
 
 To try the offline verbs against the fixture, copy `test/fixtures/heronite-data` to
-`$XDG_DATA_HOME/heronite` (or set the data folder in the plugin's settings).
+`$XDG_DATA_HOME/heronite` (or set the data folder in the plugin's settings). Point the suite at a
+real data root with `HERONITE_TEST_DATA_DIR` to catch drift from a Heronite update; nothing from
+it is committed.
+
+`src/heronite/*` is pure — paths in, data out, no Effect and no host client — so the parsers, the
+filters and the entry mapping are tested without a running host. `src/kit/library-with-ui.ts` is
+the only place that talks to Punktfunk: it composes the kit's exported pieces because
+`defineLibraryPlugin` owns the only `serveUi` call and so cannot serve a per-game tab. That is why
+`@punktfunk/plugin-kit` is pinned to an exact version.
 
 ## Downloads
 
@@ -66,10 +120,13 @@ saving does nothing, because the plugin never writes to Heronite's files.
 ## History
 
 This repository began as the upstream Hydra plugin and was retargeted in place; Hydra support has
-been removed. See [ADR-0002](docs/adr/0002-retarget-in-place-drop-hydra.md).
-
-Licensed MIT OR Apache-2.0.
+been removed. Library ids therefore changed from `hydra:*` to `heronite:*`, so pins, art caches and
+GameStream app ids from the Hydra plugin do not carry over. See
+[ADR-0002](docs/adr/0002-retarget-in-place-drop-hydra.md) and the
+[0.1.0 release note](docs/release-0.1.0.md).
 
 ## Use of AI
 
 This project uses AI for writing code.
+
+Licensed MIT OR Apache-2.0.
