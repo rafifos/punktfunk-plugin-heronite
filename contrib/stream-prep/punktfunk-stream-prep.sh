@@ -1,11 +1,14 @@
 #!/bin/sh
 # punktfunk hook: "on": "game.launching", "hold": true.
 #
-# Runs before the entry's command starts, and the launch waits for it. A gamescope session starts
-# its game from the session's own Heronite, which hands the launch to Steam; an instance left on the
-# desktop answers those hand-offs with the desktop environment, so the game opens on the host's
-# screen instead of the stream, and the gamescope WSI layer reports "CreateSwapchainKHR: Creating
-# swapchain for non-Gamescope swapchain".
+# Runs before the entry's command starts, and the launch waits for it. Heronite runs one instance per
+# data folder: an instance left on the desktop answers the session's launch and exits, so the game
+# opens on the host's screen and the stream's display is torn down. This clears the desk's Heronite
+# and Steam out of the way, and punktfunk-stream-restore.sh puts back what it stopped.
+#
+# The rendering side — the game reaching the session's compositor instead of the desktop's — is
+# Heronite's own global environment now (`WAYLAND_DISPLAY`, empty), not a hook's job: a hook is a
+# separate process, and a child's environment is fixed when the host forks it.
 #
 # Only processes without GAMESCOPE_WAYLAND_DISPLAY in their environment are stopped: those are the
 # desktop's. A local (desk) launch never runs this.
@@ -45,10 +48,6 @@ if running=$(desk_appid); then
     fi
     logger -t punktfunk-stream-prep "the streamed title is running at the desk (AppId=$running); stopping it"
 fi
-if pgrep -f 'reaper SteamLaunch AppId=' >/dev/null 2>&1; then
-    logger -t punktfunk-stream-prep "a Steam game is running at the desk; left everything alone"
-    exit 0
-fi
 
 in_session() {
     tr '\0' '\n' < "/proc/$1/environ" 2>/dev/null | grep -q '^GAMESCOPE_WAYLAND_DISPLAY='
@@ -84,16 +83,15 @@ if pgrep -x steam >/dev/null 2>&1; then
 fi
 
 # Bounded: a client that will not die must not hang the launch it is holding.
+desk_alive() {
+    for p in $(heronite_pids) $(pgrep -x steam 2>/dev/null); do
+        in_session "$p" || return 0
+    done
+    return 1
+}
+
 i=0
-while [ "$i" -lt 60 ]; do
-    alive=0
-    for p in $(heronite_pids); do
-        in_session "$p" || alive=1
-    done
-    for p in $(pgrep -x steam 2>/dev/null); do
-        in_session "$p" || alive=1
-    done
-    [ "$alive" = 0 ] && break
+while [ "$i" -lt 60 ] && desk_alive; do
     sleep 0.25
     i=$((i + 1))
 done

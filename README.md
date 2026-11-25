@@ -66,16 +66,18 @@ desktop, for example — loses it, and the live layer then reports `CreateSwapch
 swapchain for non-Gamescope swapchain` / `Hooking has failed somewhere! You may have a bad Vulkan
 layer interfering` for a window the compositor never owned. That dialog blocks the game before it
 creates a window, so the stream has nothing to show while the game appears on the host's own screen.
-**Quit Steam as well as Heronite before streaming**, so the session starts its own; if the dialog
-still appears, compare the game's environment — inside the session it carries
-`GAMESCOPE_WAYLAND_DISPLAY` and `PUNKTFUNK_GAMESCOPE_WSI=1`
-(`tr '\0' '\n' < /proc/<game pid>/environ`).
+**Quit Steam as well as Heronite before streaming**, so the session starts its own — the hooks below
+do that for you. If the dialog still appears, read the game's environment
+(`tr '\0' '\n' < /proc/<game pid>/environ`): inside the session it carries `GAMESCOPE_WAYLAND_DISPLAY`
+and `PUNKTFUNK_GAMESCOPE_WSI=1`, and `WAYLAND_DISPLAY` is empty. The global setting below is what keeps
+that last one empty.
 
-**So neither has to be quit by hand**, install the two hooks. `hooks.json` supports `"hold": true` on
+**So neither has to be quit by hand**, install the hooks. `hooks.json` supports `"hold": true` on
 `game.launching`: the launch waits for the hook, so it runs _before_ the entry's command — a connect
-hook only races the launch and loses. The installer copies both scripts and merges three entries
-(`game.launching` → prep, `session.ended` and `host.started` → restore) into
-`~/.config/punktfunk/hooks.json`, then restarts the host — no checkout needed:
+hook only races the launch and loses. The installer puts the three scripts in `~/.local/bin` and
+merges five entries into `~/.config/punktfunk/hooks.json` — `game.launching` → prep,
+`game.running` twice → the diagnostics sample, and `session.ended` plus `host.started` → restore —
+then restarts the host, no checkout needed:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/rafifos/punktfunk-plugin-heronite/main/contrib/stream-prep/install.sh | sh
@@ -113,61 +115,28 @@ A real capture from a gamescope session shows why that matters:
 
 Steam's runtime re-exposes the host session's Wayland socket inside the container, so a
 Wayland-capable client under it presents to KWin while the gamescope WSI layer is loaded — which is
-exactly when that layer reports `Creating swapchain for non-Gamescope swapchain`. Force the game onto
-X11 with Steam → the game → Launch Options:
+exactly when that layer reports `Creating swapchain for non-Gamescope swapchain`. The fix belongs in
+Heronite, in its **global environment options**, so it reaches every title it starts:
 
-```
-env -u WAYLAND_DISPLAY %command%
-```
+| Variable          | Value     |
+| ----------------- | --------- |
+| `WAYLAND_DISPLAY` | _(empty)_ |
 
-`env -u` unsets it rather than blanking it, and that difference matters: Proton decides on the
-variable's _presence_, `if "wayland" in self.compat_config and "WAYLAND_DISPLAY" in self.env`, so an
-empty value still enables the Wayland driver. HDR is unaffected either way — the HDR10 swapchain comes
-from the gamescope WSI layer over X11 (`--hdr-enabled`, `PUNKTFUNK_GAMESCOPE_WSI=1`, `DXVK_HDR=1`),
-none of which reads `WAYLAND_DISPLAY`.
+No game needs its own launch option, and nothing needs to sit in front of `%command%` — other options
+a wrapper like goverlay used to set can move into the same place. Measured on the host: with it set,
+a streamed game renders inside the session; with it removed, the same game presents to the desktop
+and the client stays on a black screen.
 
-A hook cannot do this for you — it is a separate process, and a child's environment is fixed when the
-host forks it — so the choice is where the variable is set:
+Earlier revisions of this README documented a per-game Steam launch option
+(`env -u WAYLAND_DISPLAY %command%`) and a goverlay route, because attempts above Steam were undone
+by its runtime before the game ran. Heronite's global option is the one that survives, so both are
+gone: one was per-title, the other an extra process in the chain.
 
-| Where                                                   | Scope                          | Measured result                                                                                                                                                   |
-| ------------------------------------------------------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Steam launch options `env -u WAYLAND_DISPLAY %command%` | one game                       | **works** — it runs after everything else, so nothing re-adds the variable                                                                                        |
-| `PROTON_ENABLE_WAYLAND=0`                               | every Proton title             | **does not work** — the game arrived without the variable at all: Steam's runtime drops `PROTON_*` when it builds the game's environment, so Proton never sees it |
-| the plugin's own launch (`exe: "env"`)                  | every game through this plugin | **does not work** — same reason: the value is set two processes too early and the game process never receives it                                                  |
+HDR is unaffected — the HDR10 swapchain comes from the gamescope WSI layer over X11
+(`--hdr-enabled`, `PUNKTFUNK_GAMESCOPE_WSI=1`, `DXVK_HDR=1`), none of which reads `WAYLAND_DISPLAY`.
 
-The working line, once per title, in Steam → the game → Properties → Launch Options:
-
-```
-env -u WAYLAND_DISPLAY %command%
-```
-
-There is no global equivalent: Steam has no session-wide launch options, and the variable is re-added
-inside its runtime container after any launcher-level attempt. A title with a launch option already
-set keeps it — just add the prefix.
-
-When another tool already owns the launch line — goverlay, for instance, writes
-`"…/bgmod" -- env gamemoderun %command%` — the prefix goes **after the `--`**, which is where bgmod
-hands over, and **before** the program:
-
-```
-"…/goverlay/gameconfig/global/bgmod" -- env -u WAYLAND_DISPLAY gamemoderun %command%
-```
-
-bgmod reads the `bgmod.conf` that sits **next to its own binary** (measured), and its `[Env]` section is
-exported to the game, so a per-game copy does the same without touching Steam:
-
-```ini
-[Env]
-WAYLAND_DISPLAY=
-```
-
-That exports the key empty rather than removing it — enough here, but `env -u` is the stricter form.
-Put it in `gameconfig/<Game>/bgmod.conf` and point that game's launch option at that folder's `bgmod`;
-the `global/bgmod.conf` copy applies to every goverlay-wrapped title, desktop included, and it already
-carries `PROTON_ENABLE_HDR=1` and `ENABLE_HDR_WSI=1`.
-
-The diagnostics log records `PROTON_ENABLE_WAYLAND`, `PROTON_USE_WAYLAND` and `SDL_VIDEODRIVER` for
-every game process, so whichever route you pick, the log says whether it arrived.
+The diagnostics log records `WAYLAND_DISPLAY`, `PROTON_ENABLE_WAYLAND`, `PROTON_USE_WAYLAND` and
+`SDL_VIDEODRIVER` for every game process, so it says whether the setting arrived.
 
 **Sound is a client setting, and 5.1 is one of them.** The host opens its capture at the channel count
 the client asked for — `pf-audio`: "a host-owned null sink claimed as the session default, advertising
@@ -211,7 +180,7 @@ Steam when my computer starts_ and Heronite's _Start with the system_.
 A streamed game entry also waits for the game's **own window** before the client shows it. The host
 reports the game `running` as soon as its process is up, but holds its splash until the window
 reaches the screen — "often far later than its process: a Proton prefix build, a splash on a black
-window" — and a chain like Heronite → Steam → goverlay can outlast the client's patience. For that
+window" — and a chain like Heronite → Steam can outlast the client's patience. For that
 shape, stream the **Heronite** tile instead: a launcher entry keeps the session up until you leave
 it, so you get Heronite's own window in the stream and start the game from there. That is the flow
 to prefer whenever a launcher sits in front of the game.
