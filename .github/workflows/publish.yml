@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      # npm provenance: the attestation is signed with the workflow's OIDC identity.
+      # npm provenance and trusted publishing both authenticate the run through this identity.
       id-token: write
     steps:
       - uses: actions/checkout@v4
@@ -36,6 +36,8 @@ jobs:
         with:
           bun-version: 1.4.5
 
+      # No `registry-url`: that writes an `.npmrc` pointing at `${NODE_AUTH_TOKEN}`, which would
+      # shadow trusted publishing with an empty bearer token.
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -61,7 +63,6 @@ jobs:
         id: check
         env:
           REF: ${{ inputs.ref }}
-          NODE_AUTH_TOKEN: ${{ secrets.npm-token }}
         run: |
           name="$(node -p "require('./package.json').name")"
           if npm view "$name@${REF#v}" version >/dev/null 2>&1; then
@@ -71,11 +72,18 @@ jobs:
             echo "publish=true" >>"$GITHUB_OUTPUT"
           fi
 
-      # An empty NODE_AUTH_TOKEN is left out of the request, which is what npm's trusted
-      # publishing needs; a token secret keeps the first, unattended publish working before
-      # that binding exists on the registry.
-      - name: Publish
-        if: steps.check.outputs.publish == 'true'
-        run: npm publish --provenance --access public
+      # Until `npm trust github` is bound to this workflow the registry will not accept an OIDC
+      # token, so the very first version needs a token. --userconfig keeps it out of the repository
+      # and out of the runner's default npm config.
+      - name: Publish with an npm token
+        if: ${{ steps.check.outputs.publish == 'true' && secrets.npm-token != '' }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.npm-token }}
+        run: |
+          printf '//registry.npmjs.org/:_authToken=%s\n' "$NODE_AUTH_TOKEN" >"$RUNNER_TEMP/.npmrc"
+          npm publish --provenance --access public --userconfig "$RUNNER_TEMP/.npmrc"
+
+      # The steady state: no secret anywhere, the run's OIDC identity is the credential.
+      - name: Publish with trusted publishing
+        if: ${{ steps.check.outputs.publish == 'true' && secrets.npm-token == '' }}
+        run: npm publish --provenance --access public

@@ -174,11 +174,28 @@ The plugin definition carries no version of its own: `pluginDef.version` reads `
 which `bun build` inlines into `dist`. A release therefore reports the new version to the host with
 no second place to bump.
 
-Publishing needs one repository secret, `NPM_TOKEN`, an npm **Automation** token with write access to
-`@rafifos/plugin-heronite`. Provenance is signed through GitHub's OIDC identity, so the workflow asks
-for `id-token: write` and no extra setup. Once the first version exists, npm's trusted publishing can
-replace the token: bind the package to this repository and workflow on npmjs.com, drop the secret, and
-the same job authenticates over OIDC instead.
+Publishing uses **trusted publishing**: the job holds no npm credential at all. `id-token: write`
+lets npm verify the run's GitHub OIDC identity and mint a short-lived token, and `--provenance` signs
+the attestation with the same identity. The binding lives on the registry, not in this repository:
+
+```sh
+npm trust github @rafifos/plugin-heronite \
+  --repo rafifos/punktfunk-plugin-heronite \
+  --file publish.yml --allow-publish
+npm trust list @rafifos/plugin-heronite
+```
+
+A trusted relationship can only be bound to a package that already exists, so the **first** version
+needs one bootstrap publish. Either log in locally and run `npm publish` from a checkout of the tag,
+or add a repository secret `NPM_TOKEN` (an npm Automation token) for that one release and delete it
+afterwards — `publish.yml` uses a token only when the secret is present and falls back to OIDC when it
+is not, so removing the secret is the switch. Publish with `--access public` and `--provenance`, as
+the workflow does.
+
+`bootstrap-sha` in `release-please-config.json` is `d537e40`, the parent of `190d767`, the first
+commit of this repository's own history, so every changelog starts at `190d767` and never reaches the
+Hydra-era commits below the fork point. It is a root-level option: inside `packages."."` release-please
+ignores it and walks the whole history.
 
 The repository has to stay public for provenance attestations to be published.
 

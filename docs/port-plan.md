@@ -311,6 +311,9 @@ code:
 - **The version lives in one place.** `pluginDef.version` was a literal `"0.1.0"`, which
   release-please cannot see; it now reads `package.json`, which `bun build` inlines into `dist`,
   so the definition cannot drift from the tag.
+- **Release options are root-level.** `bootstrap-sha`, `initial-version` and `changelog-sections`
+  only exist on the manifest's root; inside a package entry release-please silently ignores them,
+  which is how the first changelog draft reached the Hydra-era root commit and proposed 1.0.0.
 
 ## Known limitations
 
