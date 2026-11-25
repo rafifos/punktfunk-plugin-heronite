@@ -83,18 +83,46 @@ jobs:
             echo "publish=true" >>"$GITHUB_OUTPUT"
           fi
 
-      # Until `npm trust github` is bound to this workflow the registry will not accept an OIDC
-      # token, so the very first version needs one. `secrets` is not available in a step `if`, so
-      # the shell decides: a --userconfig keeps the token out of the runner's default npm config,
-      # and with no token the publish authenticates over the run's OIDC identity.
+      # Which credential this run has, in the log, before anything fails. A repository secret wins
+      # while it exists; otherwise the run's OIDC identity is the only credential, and it can only
+      # publish once a trusted publisher is bound to the package on the registry.
+      - name: Which credential publishes this
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.npm-token }}
+        run: |
+          npm --version
+          if [ -n "${NODE_AUTH_TOKEN:-}" ]; then
+            echo "credential: repository secret NPM_TOKEN"
+          elif [ -n "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ]; then
+            echo "credential: OIDC (trusted publishing)"
+          else
+            echo "::warning::no token and no OIDC endpoint; the publish cannot authenticate"
+          fi
+
       - name: Publish
+        id: publish
         if: steps.check.outputs.publish == 'true'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.npm-token }}
         run: |
+          set +e
           if [ -n "${NODE_AUTH_TOKEN:-}" ]; then
             printf '//registry.npmjs.org/:_authToken=%s\n' "$NODE_AUTH_TOKEN" >"$RUNNER_TEMP/.npmrc"
-            npm publish --provenance --access public --userconfig "$RUNNER_TEMP/.npmrc"
+            output=$(npm publish --provenance --access public --userconfig "$RUNNER_TEMP/.npmrc" 2>&1)
           else
-            npm publish --provenance --access public
+            output=$(npm publish --provenance --access public 2>&1)
+          fi
+          status=$?
+          printf '%s\n' "$output"
+          if [ "$status" -ne 0 ]; then
+            case "$output" in
+              *"need auth"* | *E401* | *ENEEDAUTH*)
+                echo "::error::npm found no usable credential. Bind the trusted publisher first:"
+                echo "::error::  npm trust github @rafifos/plugin-heronite --repo rafifos/punktfunk-plugin-heronite --file publish.yml --allow-publish"
+                ;;
+              *EOTP*)
+                echo "::error::the credential needs a one-time password; publish this version by hand, or use an Automation token"
+                ;;
+            esac
+            exit "$status"
           fi
