@@ -39,10 +39,35 @@ mkdir -p "$(dirname "$out")"
         found=1
         echo "--- pid $p ($comm): $(tr '\0' ' ' <"$dir/cmdline" 2>/dev/null | cut -c1-100)"
         tr '\0' '\n' <"$dir/environ" 2>/dev/null |
-            grep -E '^(DISPLAY|WAYLAND_DISPLAY|GAMESCOPE_WAYLAND_DISPLAY|ENABLE_GAMESCOPE_WSI|PUNKTFUNK_GAMESCOPE_WSI|DXVK_HDR|PROTON_ENABLE_WAYLAND|PROTON_USE_WAYLAND|SDL_VIDEODRIVER)=' |
+            grep -E '^(DISPLAY|WAYLAND_DISPLAY|GAMESCOPE_WAYLAND_DISPLAY|ENABLE_GAMESCOPE_WSI|PUNKTFUNK_GAMESCOPE_WSI|DXVK_HDR|PROTON_ENABLE_WAYLAND|PROTON_USE_WAYLAND|SDL_VIDEODRIVER|PULSE_SINK|PULSE_SERVER)=' |
             sed 's/^/    /' || echo "    (display env unreadable)"
     done
     [ "$found" = 0 ] && echo "--- no game process found yet"
+
+    # Surround leaves two traces. The host mints a null sink advertising the channel count the
+    # client asked for (pf-audio: "advertising `channels` so apps can produce real surround"), so a
+    # `2ch` sink means the session negotiated stereo before any game had an opinion. The stream's
+    # own spec then says what the game actually produced into it.
+    if command -v pactl >/dev/null 2>&1; then
+        echo "--- audio sink: $(pactl get-default-sink 2>/dev/null || echo '?')"
+        echo "--- audio sinks (id name driver spec state):"
+        pactl list short sinks 2>/dev/null | sed 's/^/    /'
+        echo "--- audio streams (id sink client spec):"
+        pactl list short sink-inputs 2>/dev/null | sed 's/^/    /'
+    else
+        echo "--- audio: pactl not found"
+    fi
+
+    # The host's own audio levers: hires (uncompressed PCM) and which sink mode it captures.
+    for dir in /proc/[0-9]*; do
+        p=${dir#/proc/}
+        [ "$p" = "$$" ] && continue
+        [ "$(cat "$dir/comm" 2>/dev/null)" = "punktfunk-host" ] || continue
+        tr '\0' '\n' <"$dir/environ" 2>/dev/null |
+            grep -E '^PUNKTFUNK_(AUDIO_HIRES|STREAM_SINK|AUDIO_GAIN)=' |
+            sed 's/^/    host: /'
+        break
+    done
 
     log=$(ls -t /run/user/"$(id -u)"/punktfunk-gamescope-*.log 2>/dev/null | head -1)
     [ -n "$log" ] && echo "session log: $log"

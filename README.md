@@ -75,7 +75,8 @@ Two samples are taken (`game.running`, and again 25 s later, because `game.runni
 launcher's process appears — often a minute before Proton and the game exist). They write
 `~/.local/state/punktfunk/stream-diagnostics.log`: one block per launched game listing the Wine,
 Proton and session processes with their `DISPLAY`, `WAYLAND_DISPLAY`, `GAMESCOPE_WAYLAND_DISPLAY`
-and WSI variables. That is the difference between a game rendering inside the session and one that
+and WSI variables, plus the audio plumbing: the default sink, every sink's channel format, and each
+stream's. That is the difference between a game rendering inside the session and one that
 escaped to the desktop — the gamescope layer only ever reports a non-gamescope swapchain for the
 second — so a black screen leaves the answer behind instead of needing someone at a terminal while
 it happens:
@@ -153,6 +154,16 @@ carries `PROTON_ENABLE_HDR=1` and `ENABLE_HDR_WSI=1`.
 The diagnostics log records `PROTON_ENABLE_WAYLAND`, `PROTON_USE_WAYLAND` and `SDL_VIDEODRIVER` for
 every game process, so whichever route you pick, the log says whether it arrived.
 
+**Sound is a client setting, and 5.1 is one of them.** The host opens its capture at the channel count
+the client asked for — `pf-audio`: "a host-owned null sink claimed as the session default, advertising
+`channels` so apps can produce real surround" — and `AudioParams` accepts 2, 6 (5.1) or 8 (7.1).
+`AudioLayout` carries Opus layouts for all three, and 7.1.4 is padded with silence per frame. Above
+Opus, **Lossless** sends uncompressed PCM instead, gated on `PUNKTFUNK_AUDIO_HIRES` (on by default) and
+on fitting a quarter of the video bitrate. A soundbar fed PCM by the TV is therefore the expected path:
+set the client to **Audio channels: 5.1** and **Audio quality: Lossless**. The diagnostics log settles
+what you got — a sink reading `6ch` means the session negotiated surround before any game had an
+opinion, and a stream still at `2ch` means the game itself never produced it.
+
 A game **already running at the desk** is handled by title: if its Steam AppId matches the entry
 being launched, the prep stops it too — otherwise the session's Heronite hands the launch to the
 desktop instance and exits, which tears the display down and reconnects in a loop. A _different_
@@ -165,23 +176,12 @@ PUNKTFUNK_PREP=0     # never stop anything; close Steam/Heronite yourself before
 PUNKTFUNK_RESTORE=0  # never start them again when a session ends
 ```
 
-**The plugin already applies the last row.** Every transport that starts Heronite is an `env` call
-rather than the program itself:
-
-```json
-"run-program": {
-  "exe": "env",
-  "args": ["PROTON_ENABLE_WAYLAND=0", "{program}", "--no-gui", "--launch", "{runner}", "{appName}"]
-}
-```
-
-Heronite hands its environment to the Steam it starts, and Steam passes unknown variables through to
-the game, so every Proton title launched through this plugin runs with Wine's Wayland driver off — no
-per-game launch option, and HDR is untouched. It is an `env` prefix rather than a setting because
-`ExecTemplate` has no environment field and the host reads the manifest before the plugin runs, so a
-console toggle cannot change it. To turn it off, drop the leading `PROTON_ENABLE_WAYLAND=0` and restore
-the original `exe` in [package.json](package.json); `test/manifest.test.ts` pins the nine wrapped
-transports so a reformat cannot quietly lose it.
+**The plugin does not try.** An earlier revision wrapped every transport in
+`env PROTON_ENABLE_WAYLAND=0`; a capture of the running game showed `PEAK.exe` carrying
+`WAYLAND_DISPLAY=wayland-1` and no `PROTON_ENABLE_WAYLAND` at all, so the prefix was reverted rather
+than left in place looking like a fix. `ExecTemplate` has no environment field and the host reads the
+manifest before the plugin runs, so a console toggle could not reach the game either. The unset has to
+happen at the game's own launch, which is why it is a launch option and not a plugin setting.
 
 The prep stops only processes **without** `GAMESCOPE_WAYLAND_DISPLAY` in their environment, so the
 session's own Heronite and Steam are never touched, and a desk launch is skipped outright. It also
