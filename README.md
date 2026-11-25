@@ -4,8 +4,8 @@ A [Punktfunk](https://git.unom.io/unom/punktfunk) host plugin that will publish 
 [Heronite](https://heronite.app) games to the host's library and start them through Heronite, so
 Heronite's Wine/Proton setup, playtime and console mode apply.
 
-**Pre-release.** Games, launcher tiles and settings work; downloads and the per-game tab arrive in
-the coming milestones. See the [port plan](docs/port-plan.md) and the [ADRs](docs/adr/).
+**Pre-release.** Games, launcher tiles, settings and downloads work; the per-game tab arrives in
+the coming milestone. See the [port plan](docs/port-plan.md) and the [ADRs](docs/adr/).
 
 New to Punktfunk? [What is Punktfunk?](docs/punktfunk.md) covers the host/client model, how a
 stream flows, and where plugins fit.
@@ -37,6 +37,23 @@ bun src/cli.ts uninstall                       # remove the entries and release 
 
 To try the offline verbs against the fixture, copy `test/fixtures/heronite-data` to
 `$XDG_DATA_HOME/heronite` (or set the data folder in the plugin's settings).
+
+## Downloads
+
+Heronite runs its own store downloads, so the host's Downloads list mirrors Heronite's queue
+rather than driving it. What it can show follows from what Heronite persists in
+`store/download-manager.json`:
+
+- **No percentage, speed or ETA.** Heronite writes the file on queue transitions, not while bytes
+  move. A row carries the size Heronite recorded and, once finished, that size as done; there is
+  nothing to interpolate in between.
+- **A killed Heronite leaves its last state on disk.** If Heronite is killed mid-download, the
+  title stays `downloading` (or `paused`) until Heronite writes the file again; the plugin cannot
+  tell that nothing is moving.
+- **A launch waits only for a title Heronite is already fetching.** Starting a game listed as
+  missing succeeds only while Heronite reports it `downloading`, `queued` or `installing`; the
+  host waits and then starts it. Anything else is refused with a sentence telling you to start the
+  download in Heronite. Pause, cancel and remove always refuse, because Heronite owns the files.
 
 ## History
 

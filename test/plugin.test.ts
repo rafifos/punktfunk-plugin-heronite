@@ -1,21 +1,29 @@
 // The plugin's settings: decoding defaults, the console's derived JSON Schema, and the watch/scan
 // wiring a saved change drives.
 
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+import type { DownloadReporter, DownloadRow } from "@punktfunk/plugin-kit";
 
-import { deriveConfigJsonSchema, makeConfigService, pluginInfoLayer } from "@punktfunk/plugin-kit";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
+
+import {
+  deriveConfigJsonSchema,
+  InstallRefused,
+  makeConfigService,
+  pluginInfoLayer,
+} from "@punktfunk/plugin-kit";
 import { fromProviderEntry } from "@punktfunk/plugin-kit/library";
-import { Effect, Queue, Schema, Stream } from "effect";
+import { Effect, Fiber, Queue, Schema, Stream } from "effect";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { watchDirs } from "../src/heronite/paths.js";
 import runnerEntry from "../src/index.js";
 import { compareParitySnapshot } from "../src/kit/library-with-ui.js";
-import { HeroniteConfig, type HeroniteSettings, pluginDef } from "../src/plugin.js";
+import { HeroniteConfig, type HeroniteSettings, pluginDef, startRefusal } from "../src/plugin.js";
 
 const fixture = join(import.meta.dir, "fixtures", "heronite-data");
+const pausedFixture = join(import.meta.dir, "fixtures", "heronite-data-paused");
 
 const decode = (raw: unknown) => Effect.runPromise(Schema.decodeUnknownEffect(HeroniteConfig)(raw));
 
@@ -159,5 +167,187 @@ describe("runner entry", () => {
   test("the default export is the plugin definition", () => {
     expect(runnerEntry.name).toBe("heronite");
     expect(typeof runnerEntry.main).toBe("function");
+  });
+});
+
+/** A data root holding only the files a case needs; the folder itself must exist to be found. */
+function dataRoot(files: Readonly<Record<string, string | object>>): string {
+  const dir = join(temp, "data-root");
+  mkdirSync(dir, { recursive: true });
+  for (const [relative, content] of Object.entries(files)) {
+    const file = join(dir, relative);
+    mkdirSync(dirname(file), { recursive: true });
+    writeFileSync(file, typeof content === "string" ? content : JSON.stringify(content));
+  }
+  return dir;
+}
+
+const downloadLoop = pluginDef.downloads;
+const install = pluginDef.install;
+if (downloadLoop === undefined || install === undefined) {
+  throw new Error("the plugin must publish the downloads loop and its install asks");
+}
+
+function fakeReporter(): { readonly reporter: DownloadReporter; readonly rows: DownloadRow[] } {
+  const rows: DownloadRow[] = [];
+  return {
+    rows,
+    reporter: {
+      set: (row) => rows.push(row),
+      supported: () => undefined,
+      flush: () => Promise.resolve(),
+      close: () => {},
+    },
+  };
+}
+
+/** The first loop tick runs immediately, so that fiber is interrupted while it sleeps. */
+async function firstTick(cfg: HeroniteSettings): Promise<readonly DownloadRow[]> {
+  const { reporter, rows } = fakeReporter();
+  await Effect.runPromise(
+    Effect.gen(function* () {
+      const fiber = yield* downloadLoop(reporter, Effect.succeed(cfg)).pipe(
+        Effect.forkChild({ startImmediately: true }),
+      );
+      yield* Fiber.interrupt(fiber);
+    }),
+  );
+  return rows;
+}
+
+/** `accepted`, or the sentence the host would show. */
+function answer(effect: Effect.Effect<void, unknown>): Promise<string> {
+  return Effect.runPromise(
+    effect.pipe(
+      Effect.as("accepted"),
+      Effect.catch((error) =>
+        Effect.succeed(error instanceof InstallRefused ? error.message : String(error)),
+      ),
+    ),
+  );
+}
+
+/** The refusal itself, so a test can see it is an `InstallRefused` and read its sentence. */
+async function refusalOf(effect: Effect.Effect<void, unknown>): Promise<InstallRefused> {
+  const error = await Effect.runPromise(Effect.flip(effect));
+  if (!(error instanceof InstallRefused)) {
+    throw new Error(`expected InstallRefused, got ${String(error)}`);
+  }
+  return error;
+}
+
+const ask = (externalId: string) => ({ app: `heronite:${externalId}`, externalId });
+
+describe("downloads loop", () => {
+  test("sends the live queue rows once and skips the finished history already on disk", async () => {
+    const rows = await firstTick(settings());
+
+    expect(rows.map((row) => [row.externalId, row.state])).toEqual([
+      ["nile:amzn1.adg.product.Example", "downloading"],
+      ["legendary:ExampleEpicAppDlc", "queued"],
+    ]);
+  });
+
+  test("a user-paused queue is reported paused", async () => {
+    const rows = await firstTick(settings({ dataDir: pausedFixture }));
+
+    expect(rows).toEqual([
+      {
+        externalId: "nile:amzn1.adg.product.Example",
+        state: "paused",
+        doneBytes: 0,
+        totalBytes: 13_421_772_800,
+        phase: "Paused in Heronite",
+      },
+    ]);
+  });
+
+  test("a malformed file skips the tick without sending anything", async () => {
+    const dir = dataRoot({ "store/download-manager.json": "{not json" });
+
+    expect(await firstTick(settings({ dataDir: dir }))).toEqual([]);
+  });
+});
+
+describe("install asks", () => {
+  test("start accepts a title Heronite is downloading or has queued", async () => {
+    expect(await answer(install.start(ask("nile:amzn1.adg.product.Example"), settings()))).toBe(
+      "accepted",
+    );
+    expect(await answer(install.start(ask("legendary:ExampleEpicAppDlc"), settings()))).toBe(
+      "accepted",
+    );
+  });
+
+  test("start accepts a title the host already reports as installing", () => {
+    expect(startRefusal({ externalId: "nile:Example", state: "installing", doneBytes: 0 })).toBe(
+      undefined,
+    );
+  });
+
+  test("start refuses a paused download and says Heronite holds it", async () => {
+    const refusal = await refusalOf(
+      install.start(ask("nile:amzn1.adg.product.Example"), settings({ dataDir: pausedFixture })),
+    );
+
+    expect(refusal.message).toContain("Heronite");
+    expect(refusal.message).toContain("paused");
+  });
+
+  test("start refuses a failed download and says Heronite stopped it", async () => {
+    const refusal = await refusalOf(
+      install.start(ask("legendary:ExampleFailedEpicApp"), settings()),
+    );
+
+    expect(refusal.message).toContain("Heronite");
+    expect(refusal.message).toContain("stopped");
+  });
+
+  test("start refuses a finished download", async () => {
+    const dir = dataRoot({
+      "store/download-manager.json": {
+        queue: [],
+        finished: [
+          {
+            params: { runner: "legendary", appName: "ExampleDone" },
+            type: "install",
+            status: "done",
+          },
+        ],
+      },
+    });
+
+    const refusal = await refusalOf(
+      install.start(ask("legendary:ExampleDone"), settings({ dataDir: dir })),
+    );
+
+    expect(refusal.message).toContain("Heronite");
+    expect(refusal.message).toContain("finished");
+  });
+
+  test("start refuses a title Heronite is not fetching at all", async () => {
+    const refusal = await refusalOf(install.start(ask("legendary:ExampleNotQueued"), settings()));
+
+    expect(refusal.message).toContain("Heronite");
+  });
+
+  test("start refuses when no data root or no queue file exists", async () => {
+    const dir = dataRoot({});
+
+    const refusal = await refusalOf(install.start(ask("nile:Example"), settings({ dataDir: dir })));
+
+    expect(refusal.message).toContain("Heronite");
+  });
+
+  test("pause, cancel and uninstall always refuse because Heronite owns the files", async () => {
+    const cases = [
+      install.pause(ask("nile:amzn1.adg.product.Example"), settings()),
+      install.cancel(ask("nile:amzn1.adg.product.Example"), settings()),
+      install.uninstall(ask("nile:amzn1.adg.product.Example"), settings()),
+    ];
+
+    for (const refusal of await Promise.all(cases.map(refusalOf))) {
+      expect(refusal.message).toContain("Heronite");
+    }
   });
 });

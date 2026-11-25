@@ -1,15 +1,23 @@
-// The plugin's definition: the four settings, the scan/launchers/watches, and the CLI's `paths`
-// verb. Downloads, install asks and the per-game tab arrive in later milestones.
+// The plugin's definition: the four settings, the scan/launchers/watches, the CLI's `paths` verb,
+// Heronite's download queue and the install asks it refuses. The per-game tab arrives in a later
+// milestone.
 
-import type { CliCommand } from "@punktfunk/plugin-kit";
+import type { CliCommand, DownloadReporter, DownloadRow } from "@punktfunk/plugin-kit";
+import type { LibraryInstall } from "@punktfunk/plugin-kit/library";
 import type { ProviderEntry } from "@punktfunk/plugin-kit/wire";
 import type { DataRoot } from "./heronite/paths.js";
 
 import { statSync } from "node:fs";
 
-import { handedPath, makeConfigService } from "@punktfunk/plugin-kit";
+import { handedPath, InstallRefused, makeConfigService } from "@punktfunk/plugin-kit";
 import { Effect, Schema } from "effect";
 
+import {
+  downloadChanges,
+  downloadRows,
+  makeDownloadMemory,
+  readDownloads,
+} from "./heronite/downloads.js";
 import { buildEntries } from "./heronite/entries.js";
 import { chooseTransport, launcherTiles } from "./heronite/launch.js";
 import { assembleCollection } from "./heronite/library.js";
@@ -92,6 +100,84 @@ const fileFound = (file: string): boolean => {
   }
 };
 
+/** One sentence the host shows when Heronite, not this plugin, owns the download. */
+const REFUSED = {
+  paused: "Heronite has this download paused. Resume it in Heronite.",
+  failed: "Heronite stopped this download. Retry it in Heronite.",
+  done: "Heronite just finished it. Start it again in a moment.",
+  notFetching: "Heronite installs its games itself. Start the download in Heronite.",
+  pause: "Heronite runs this download. Pause it in Heronite.",
+  cancel: "Heronite runs this download. Cancel it in Heronite.",
+  uninstall: "Remove the game's files in Heronite.",
+} as const;
+
+/**
+ * Why `start` cannot wait for a title, or `undefined` when Heronite is already fetching it. The
+ * host waits only for a live row; everything else is refused before any waiting starts.
+ */
+function startRefusal(row: DownloadRow | undefined): string | undefined {
+  switch (row?.state) {
+    case "downloading":
+    case "queued":
+    case "installing":
+      return undefined;
+    case "paused":
+      return REFUSED.paused;
+    case "failed":
+      return REFUSED.failed;
+    case "done":
+      return REFUSED.done;
+    default:
+      return REFUSED.notFetching;
+  }
+}
+
+/** The title's row in the file as it is right now; a missing root or file means no row. */
+function currentRow(cfg: HeroniteSettings, externalId: string): DownloadRow | undefined {
+  const root = resolveRoot(cfg);
+  if (root === undefined) return undefined;
+  const snapshot = readDownloads(root.root);
+  return snapshot === undefined ? undefined : downloadRows(snapshot).get(externalId);
+}
+
+const install: LibraryInstall<HeroniteSettings> = {
+  start: (request, cfg) =>
+    Effect.gen(function* () {
+      const refusal = startRefusal(currentRow(cfg, request.externalId));
+      if (refusal === undefined) return;
+      return yield* Effect.fail(new InstallRefused({ message: refusal }));
+    }),
+  // Heronite owns the bytes, so these three never do anything on its behalf.
+  pause: () => Effect.fail(new InstallRefused({ message: REFUSED.pause })),
+  cancel: () => Effect.fail(new InstallRefused({ message: REFUSED.cancel })),
+  uninstall: () => Effect.fail(new InstallRefused({ message: REFUSED.uninstall })),
+};
+
+/**
+ * Reports the queue for the plugin's life. Each tick re-reads the settings, so a changed data
+ * folder is followed without a restart; a missing root or malformed file skips the tick silently.
+ */
+const downloadsLoop = Effect.fnUntraced(function* (
+  reporter: DownloadReporter,
+  config: Effect.Effect<HeroniteSettings, unknown>,
+): Effect.fn.Return<void> {
+  const memory = makeDownloadMemory();
+
+  yield* Effect.forever(
+    Effect.gen(function* () {
+      const cfg = yield* config.pipe(Effect.catch(() => Effect.succeed(undefined)));
+      if (cfg !== undefined) {
+        const root = resolveRoot(cfg);
+        const snapshot = root === undefined ? undefined : readDownloads(root.root);
+        if (snapshot !== undefined) {
+          for (const row of downloadChanges(downloadRows(snapshot), memory)) reporter.set(row);
+        }
+      }
+      yield* Effect.sleep("2 seconds");
+    }),
+  );
+});
+
 const config = makeConfigService({ schema: HeroniteConfig });
 
 const pathsCommand: CliCommand<never> = {
@@ -121,7 +207,7 @@ const pathsCommand: CliCommand<never> = {
     }),
 };
 
-export { HeroniteConfig, type HeroniteSettings };
+export { HeroniteConfig, type HeroniteSettings, startRefusal };
 
 export const pluginDef = {
   name: "heronite",
@@ -141,6 +227,8 @@ export const pluginDef = {
     ...configuredDir(cfg.dataDir),
     ...configuredDir(cfg.programDir),
   ],
+  downloads: downloadsLoop,
+  install,
   commands: { paths: pathsCommand },
 };
 
