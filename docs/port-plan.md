@@ -36,6 +36,9 @@ src/
     paths.ts               data-root discovery and every file path
     json.ts                tolerant JSON reads (missing/empty/malformed)
     model.ts               TypeScript shapes of Heronite's JSON files
+    identity.ts            external id, metadata key and Collection key, one rule each
+    text.ts                non-empty and JSON-shape guards the readers share
+    sources.ts             every Heronite file read in one place, with the install rules
     library.ts             assembles the Collection view from the store files
     entries.ts             Heronite game -> ProviderEntry
     launch.ts              transport choice, launcher tiles, protocol URLs
@@ -47,8 +50,10 @@ test/
   fixtures/heronite-data/  hand-authored data root
 ```
 
-`heronite/*` is pure: it takes paths and returns data, with no Effect or host client. `kit/*` is the
-only place that talks to Punktfunk. Tests target the pure layer and the fixture tree.
+`heronite/*` is pure: it takes paths and returns data, with no Effect or host client. It uses plain
+guards instead of `effect/Predicate` and only `import type` from `@punktfunk/plugin-kit`, so the
+layer stays free of the Effect runtime and the package's runtime modules. `kit/*` is the only place
+that talks to Punktfunk. Tests target the pure layer and the fixture tree.
 
 `defineLibraryPlugin` cannot serve a per-game tab (it owns the only `serveUi` call), so
 [`kit/library-with-ui.ts`] composes the kit's exported pieces itself: config service, provider
@@ -200,8 +205,10 @@ so portable copies and odd installs work without widening the manifest.
 ## Testing
 
 - `test/fixtures/heronite-data`: a hand-authored tree covering a store game, a sideload executable,
-  a Steam URI entry, an emulator game, a downloading title, a hidden game, a DLC, a copy group, a
-  paused queue and a partial Steam library. No personal data.
+  a Steam URI entry, an emulator game, a downloading title, a hidden game, a DLC, a copy group and
+  a partial Steam library. No personal data.
+- `test/fixtures/heronite-data-paused`: only `store/download-manager.json`, with the user pause
+  set. `userPaused` pauses the one queue, so the paused mapping cannot share the main tree.
 - Unit tests per module: data-root resolution, tolerant reads, library assembly and filters, copy
   collapse, Steam join, entry mapping (launch, art, meta, detect, install), queue mapping and
   diffing, tab data.
@@ -224,7 +231,7 @@ so portable copies and odd installs work without widening the manifest.
    **Done.**
 6. **Per-game tab** — `serveUi({ game })`, playtime, status, sessions. **Done.**
 7. **Docs and first release** — README, the two primers, `v0.1.0`, npm publish, install check.
-   **Docs done; the tag is local. Publishing to npm and launching a game from a real host are the
+   **Docs done. The `v0.1.0` tag, the npm publish and launching a game from a real host are the
    remaining operator steps.**
 
 ## What changed while building
@@ -249,6 +256,14 @@ code:
   every request without re-reading the module.
 - **A second fixture root.** `test/fixtures/heronite-data-paused` holds only a paused
   `download-manager.json`, so the paused mapping is pinned without a second full library.
+- **Store caches are empty without `__timestamp`.** A store cache whose `__timestamp` wrapper is
+  missing reads as an empty library, because that is Heronite's own rule: it ignores a cache it has
+  not stamped. The fixtures pin both the stamped and the unstamped case.
+- **The logo chain includes the store's `art_logo`.** A title's logo can also come from the store
+  cache's `art_logo`, between fetched metadata and the Steam CDN, not from metadata alone.
+- **A missing `statuses.json` falls back to Heronite's nine defaults.** An absent, malformed or
+  explicitly empty status list resolves through the nine built-in completion statuses (ids are the
+  slugs), so a fresh install still shows the game's status.
 - **Real-install drift.** The plugin was run against a real Steam-only Heronite 1.8 folder with
   `legendary_library.json`, `gog_library.json`, `nile_library.json`, `art.json`, `emulators.json`,
   `copies.json`, `statuses.json` and `download-manager.json` absent; every one is optional and the

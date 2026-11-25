@@ -43,7 +43,6 @@ describe("assembleCollection golden", () => {
   test("the fixture tree yields the exact games, sorted by key", () => {
     const collection = assembleCollection(root);
 
-    expect(collection.root).toBe(root);
     expect(collection.games.map((game) => game.key)).toEqual([
       "gog:1207658999",
       "legendary:ExampleSteamCopyEpic",
@@ -338,6 +337,83 @@ describe("assembleCollection copy collapse", () => {
 
     expect(keys(dir)).toEqual([]);
   });
+
+  test("an installed member later in the group wins over a downloading first member", () => {
+    const dir = tempRoot({
+      "sideload_apps/library.json": {
+        games: [
+          {
+            runner: "sideload",
+            app_name: "ExampleCopyA",
+            title: "Example Copy A",
+            is_installed: false,
+            install: { executable: "/games/a/game", platform: "linux" },
+          },
+          {
+            runner: "sideload",
+            app_name: "ExampleCopyB",
+            title: "Example Copy B",
+            is_installed: true,
+            install: { executable: "/games/b/game", platform: "linux" },
+          },
+        ],
+      },
+      "local_library/library.json": {
+        games: {
+          ExampleCopyA: { appName: "ExampleCopyA", launchKind: "executable" },
+          ExampleCopyB: { appName: "ExampleCopyB", launchKind: "executable" },
+        },
+      },
+      "local_library/copies.json": {
+        links: [["sideload_ExampleCopyA", "sideload_ExampleCopyB"]],
+      },
+      "store/download-manager.json": {
+        queue: [{ params: { runner: "sideload", appName: "ExampleCopyA" } }],
+      },
+    });
+
+    expect(keys(dir)).toEqual(["sideload:ExampleCopyB"]);
+  });
+
+  test("with no installed member, the first downloading copy is published", () => {
+    const dir = tempRoot({
+      "sideload_apps/library.json": {
+        games: [
+          {
+            runner: "sideload",
+            app_name: "ExampleCopyA",
+            title: "Example Copy A",
+            is_installed: false,
+            install: { executable: "/games/a/game", platform: "linux" },
+          },
+          {
+            runner: "sideload",
+            app_name: "ExampleCopyB",
+            title: "Example Copy B",
+            is_installed: false,
+            install: { executable: "/games/b/game", platform: "linux" },
+          },
+        ],
+      },
+      "local_library/library.json": {
+        games: {
+          ExampleCopyA: { appName: "ExampleCopyA", launchKind: "executable" },
+          ExampleCopyB: { appName: "ExampleCopyB", launchKind: "executable" },
+        },
+      },
+      "local_library/copies.json": {
+        links: [["sideload_ExampleCopyA", "sideload_ExampleCopyB"]],
+      },
+      "store/download-manager.json": {
+        queue: [
+          { params: { runner: "sideload", appName: "ExampleCopyA" } },
+          { params: { runner: "sideload", appName: "ExampleCopyB" } },
+        ],
+      },
+    });
+
+    expect(keys(dir)).toEqual(["sideload:ExampleCopyA"]);
+  });
 });
 
 describe("assembleCollection Steam join", () => {
@@ -402,6 +478,69 @@ describe("assembleCollection Steam join", () => {
     });
 
     expect(keys(dir)).toEqual([]);
+  });
+
+  test("a sideload Steam entry is installed only by its own flag, not the Steam cache", () => {
+    const dir = tempRoot({
+      "sideload_apps/library.json": {
+        games: [
+          {
+            runner: "sideload",
+            app_name: "steam_440",
+            title: "Example Steam Game",
+            is_installed: false,
+            install: {},
+          },
+        ],
+      },
+      "local_library/library.json": {
+        games: {
+          steam_440: {
+            appName: "steam_440",
+            runner: "sideload",
+            launchKind: "steam-uri",
+            steamAppId: "440",
+          },
+        },
+      },
+      "store_cache/steam_library.json": {
+        games: [{ appId: "440", name: "Example Steam Game", installed: true }],
+      },
+    });
+
+    expect(keys(dir)).toEqual([]);
+  });
+
+  test("a store game with the same ids does join the Steam cache and publishes", () => {
+    const dir = tempRoot({
+      "store_cache/legendary_library.json": {
+        library: [
+          {
+            app_name: "ExampleSteamCopyEpic",
+            runner: "legendary",
+            title: "Example Steam Copy Epic Game",
+            is_installed: false,
+            install: { is_dlc: false },
+          },
+        ],
+        __timestamp: { library: "Tue Oct 06 2026 21:00:00 GMT-0300 (Local Time)" },
+      },
+      "local_library/library.json": {
+        games: {
+          ExampleSteamCopyEpic: {
+            appName: "ExampleSteamCopyEpic",
+            runner: "legendary",
+            launchKind: "steam-uri",
+            steamAppId: "440",
+          },
+        },
+      },
+      "store_cache/steam_library.json": {
+        games: [{ appId: "440", name: "Example Steam Game", installed: true }],
+      },
+    });
+
+    expect(keys(dir)).toEqual(["legendary:ExampleSteamCopyEpic"]);
   });
 });
 

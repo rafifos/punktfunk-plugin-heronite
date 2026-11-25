@@ -26,6 +26,7 @@ import {
   readDownloads,
 } from "./heronite/downloads.js";
 import { buildEntries } from "./heronite/entries.js";
+import { PLUGIN_ID } from "./heronite/identity.js";
 import { chooseTransport, launcherTiles } from "./heronite/launch.js";
 import { assembleCollection } from "./heronite/library.js";
 import {
@@ -87,8 +88,6 @@ const tilesNow = (cfg: HeroniteSettings): readonly ProviderEntry[] => {
   const root = resolveRoot(cfg);
   if (root === undefined) return [];
   return launcherTiles(transportFor(cfg, root), {
-    programFolder: cfg.programDir,
-    flatpak: root.flatpak,
     showLauncherTile: cfg.showLauncherTile,
     showConsoleTile: cfg.showConsoleTile,
   });
@@ -245,7 +244,7 @@ const pathsCommand: CliCommand<never> = {
 export { HeroniteConfig, type HeroniteSettings, startRefusal };
 
 export const pluginDef = {
-  name: "heronite",
+  name: PLUGIN_ID,
   title: "Heronite",
   version: "0.1.0",
   configSchema: HeroniteConfig,

@@ -5,11 +5,11 @@
 import type { DownloadRow, DownloadState } from "@punktfunk/plugin-kit";
 import type { DownloadElement } from "./model.js";
 
-import { Predicate } from "effect";
-
+import { entryId } from "./identity.js";
 import { readStore } from "./json.js";
 import { parseDisplaySize } from "./library.js";
 import { dataPaths } from "./paths.js";
+import { isRecord, nonEmpty } from "./text.js";
 
 /** What `store/download-manager.json` says, with Heronite's omissions already defaulted. */
 interface DownloadSnapshot {
@@ -29,14 +29,10 @@ interface DownloadId {
 /** Heronite's last sent rows, keyed by external id; `plugin.ts` owns one per process. */
 type DownloadMemory = Map<string, DownloadRow>;
 
-function nonEmpty(value: unknown): string | undefined {
-  return Predicate.isString(value) && value.trim() !== "" ? value : undefined;
-}
-
 /** The queue or history array, dropping entries that are not objects at all. */
 function elements(value: unknown): readonly DownloadElement[] {
   if (!Array.isArray(value)) return [];
-  return value.filter(Predicate.isObject) as readonly DownloadElement[];
+  return value.filter(isRecord) as readonly DownloadElement[];
 }
 
 /** A failed download Heronite did not explain still gets a sentence for the player. */
@@ -79,7 +75,7 @@ function sameRow(left: DownloadRow, right: DownloadRow): boolean {
 /** Reads the queue and history; absent, malformed or non-object files are `undefined`. */
 export function readDownloads(dataRoot: string): DownloadSnapshot | undefined {
   const file = readStore<unknown>(dataPaths(dataRoot).downloadManager);
-  if (!Predicate.isObject(file)) return undefined;
+  if (!isRecord(file)) return undefined;
 
   return {
     queue: elements(file.queue),
@@ -94,7 +90,7 @@ export function downloadId(element: DownloadElement): DownloadId | undefined {
   const appName = nonEmpty(element.params?.appName);
   if (runner === undefined || appName === undefined) return undefined;
 
-  return { runner, appName, externalId: `${runner}:${appName}` };
+  return { runner, appName, externalId: entryId(runner, appName) };
 }
 
 /** A fresh memory for {@link downloadChanges}. */

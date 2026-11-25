@@ -408,6 +408,39 @@ describe("toEntry platform and ids", () => {
     });
   });
 
+  test("a store game's metadata Steam app id is recognition, not identity", () => {
+    const entry = toEntry(
+      game({
+        runner: "legendary",
+        appName: "ExampleEpicApp",
+        steamAppId: "440",
+        local: { appName: "ExampleEpicApp", launchKind: "executable" },
+        metadata: { steamAppId: "440" },
+      }),
+      run,
+    );
+
+    expect(entry?.ids).toEqual({ epic: "ExampleEpicApp" });
+    // The same app id still feeds art, which the runner did record as this title's Steam copy.
+    expect(entry?.art?.portrait).toBe(
+      "https://cdn.cloudflare.steamstatic.com/steam/apps/440/library_600x900.jpg",
+    );
+  });
+
+  test("a store game whose launch kind resolves to Steam carries its Steam id", () => {
+    const entry = toEntry(
+      game({
+        runner: "legendary",
+        appName: "ExampleSteamCopyEpic",
+        steamAppId: "440",
+        local: { appName: "ExampleSteamCopyEpic", launchKind: "steam-uri", steamAppId: "440" },
+      }),
+      run,
+    );
+
+    expect(entry?.ids).toEqual({ steam: "440", epic: "ExampleSteamCopyEpic" });
+  });
+
   test("a title with no catalog id has no ids object", () => {
     expect(toEntry(game(), run)).not.toHaveProperty("ids");
   });
@@ -549,7 +582,6 @@ describe("buildEntries launch cap", () => {
   test("a title the protocol URL cannot carry is dropped", () => {
     const appName = "a".repeat(200);
     const collection = {
-      root: "/fixture",
       games: [
         game({
           appName,

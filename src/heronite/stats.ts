@@ -3,34 +3,11 @@
 // (ADR-0006); install state is Heronite's own.
 
 import type { StatusLine } from "@punktfunk/plugin-kit";
-import type {
-  AmazonLibraryFile,
-  CollectionMetadata,
-  CompletionStatus,
-  DownloadElement,
-  DownloadManagerFile,
-  EpicLibraryFile,
-  GameInfo,
-  GogInstalledFile,
-  GogLibraryFile,
-  LocalGameMeta,
-  LocalGameSession,
-  LocalLibraryFile,
-  MetadataFile,
-  SessionsFile,
-  SideloadLibraryFile,
-  StatusesFile,
-  SteamLibraryFile,
-  TimestampFile,
-} from "./model.js";
+import type { CompletionStatus, LocalGameSession } from "./model.js";
 
-import { Predicate } from "effect";
-
-import { readStore } from "./json.js";
-import { dataPaths } from "./paths.js";
-
-/** The plugin id the host prefixes onto every library id this plugin publishes. */
-const PLUGIN_ID = "heronite";
+import { entryId, metadataKey, PLUGIN_ID, parseEntryId } from "./identity.js";
+import { cachedGames, isInstalled, queueDownloads, readSources } from "./sources.js";
+import { isNumber, nonEmpty } from "./text.js";
 
 /** Heronite's nine statuses of a fresh install, in its own order (ids are the slugs). */
 const DEFAULT_STATUSES: readonly CompletionStatus[] = [
@@ -97,112 +74,13 @@ interface GameStats {
   readonly status?: GameStatus;
   /** The display label for the overlay's `source`, never the raw slug. */
   readonly source?: string;
-  readonly install: "installed" | "missing" | "downloading";
-}
-
-function nonEmpty(value: string | undefined): string | undefined {
-  return Predicate.isString(value) && value.trim() !== "" ? value : undefined;
+  /** Whether Heronite's files are on the host; a live download never changes that answer. */
+  readonly install: "installed" | "missing";
+  /** True while Heronite's queue holds a live download for the title. */
+  readonly downloading: boolean;
 }
 
 /** A store cache only counts when its `__timestamp` wrapper is written too (Heronite's rule). */
-interface CachedGame {
-  readonly runner: string;
-  readonly appName: string;
-  readonly gameInfo: GameInfo;
-}
-
-function cachedGames(root: string): readonly CachedGame[] {
-  const paths = dataPaths(root);
-  const sideload = readStore<SideloadLibraryFile>(paths.sideloadLibrary)?.games ?? [];
-  const epic = readStore<EpicLibraryFile>(paths.epicLibrary);
-  const gog = readStore<GogLibraryFile>(paths.gogLibrary);
-  const amazon = readStore<AmazonLibraryFile>(paths.amazonLibrary);
-
-  const games: CachedGame[] = [];
-  const add = (gameInfo: GameInfo, runnerFallback: string): void => {
-    const appName = nonEmpty(gameInfo.app_name);
-    if (appName === undefined) return;
-    games.push({ runner: nonEmpty(gameInfo.runner) ?? runnerFallback, appName, gameInfo });
-  };
-
-  for (const gameInfo of sideload) add(gameInfo, "sideload");
-  if (epic?.__timestamp?.library !== undefined) {
-    for (const gameInfo of epic.library ?? []) add(gameInfo, "legendary");
-  }
-  if (gog?.__timestamp?.games !== undefined) {
-    for (const gameInfo of gog.games ?? []) add(gameInfo, "gog");
-  }
-  if (amazon?.__timestamp?.library !== undefined) {
-    for (const gameInfo of amazon.library ?? []) add(gameInfo, "nile");
-  }
-  return games;
-}
-
-/** `metadata.json` keys games by `<runner>:<appName>`, with Zoom stored under `sideload`. */
-function metadataKey(runner: string, appName: string): string {
-  return `${runner === "zoom" ? "sideload" : runner}:${appName}`;
-}
-
-/** The Steam app id the overlay, metadata or a `steam_<id>` app name declares. */
-function steamAppIdOf(
-  gameInfo: GameInfo | undefined,
-  local: LocalGameMeta | undefined,
-  metadata: CollectionMetadata | undefined,
-): string | undefined {
-  const declared = nonEmpty(local?.steamAppId) ?? nonEmpty(metadata?.steamAppId);
-  if (declared !== undefined) return declared;
-
-  const appName = nonEmpty(gameInfo?.app_name);
-  if (appName === undefined || !appName.startsWith("steam_")) return undefined;
-  const suffix = appName.slice("steam_".length);
-  return /^\d+$/.test(suffix) ? suffix : undefined;
-}
-
-/**
- * Installed by Heronite's own flags, the GOG installed record or the cached Steam library's
- * id-only join — the same rule `assembleCollection` applies, without the Collection's filters.
- */
-function isInstalled(
-  root: string,
-  runner: string,
-  appName: string,
-  gameInfo: GameInfo | undefined,
-  local: LocalGameMeta | undefined,
-  metadata: CollectionMetadata | undefined,
-): boolean {
-  if (gameInfo?.is_installed === true) return true;
-
-  const paths = dataPaths(root);
-  if (runner === "gog") {
-    const records = readStore<GogInstalledFile>(paths.gogInstalled)?.installed ?? [];
-    if (records.some((record) => nonEmpty(record.appName) === appName)) return true;
-  }
-
-  const steamAppId = steamAppIdOf(gameInfo, local, metadata);
-  if (steamAppId === undefined) return false;
-
-  const steam = readStore<SteamLibraryFile>(paths.steamLibrary);
-  return [...(steam?.games ?? []), ...(steam?.family ?? [])].some(
-    (row) => row.installed === true && nonEmpty(row.appId) === steamAppId,
-  );
-}
-
-/** The live queue element for one `<runner>:<appName>`; `finished` history never counts. */
-function queuedDownload(
-  root: string,
-  runner: string,
-  appName: string,
-): DownloadElement | undefined {
-  const manager = readStore<DownloadManagerFile>(dataPaths(root).downloadManager);
-  return (manager?.queue ?? []).find((element) => {
-    const elementRunner =
-      nonEmpty(element.params?.runner) ?? nonEmpty(element.params?.gameInfo?.runner);
-    const elementApp =
-      nonEmpty(element.params?.appName) ?? nonEmpty(element.params?.gameInfo?.app_name);
-    return elementRunner === runner && elementApp === appName;
-  });
-}
-
 function sessionsOf(sessions: readonly LocalGameSession[] | undefined): GameSessions | undefined {
   if (sessions === undefined) return undefined;
 
@@ -210,7 +88,7 @@ function sessionsOf(sessions: readonly LocalGameSession[] | undefined): GameSess
   let lastStartedAt: string | undefined;
   for (const session of sessions) {
     const elapsed = session.elapsedSeconds;
-    if (Predicate.isNumber(elapsed) && Number.isFinite(elapsed) && elapsed > 0) {
+    if (isNumber(elapsed) && Number.isFinite(elapsed) && elapsed > 0) {
       totalSeconds += elapsed;
     }
     const startedAt = nonEmpty(session.startedAt);
@@ -273,24 +151,24 @@ function datePart(value: string): string {
  * Everything the tab shows for one host library id, or `undefined` when the id is not this
  * plugin's or no Heronite file mentions the game.
  */
-export function readStats(root: string, entryId: string): GameStats | undefined {
-  if (!entryId.startsWith(`${PLUGIN_ID}:`)) return undefined;
-  const parsed = parseEntryId(entryId.slice(PLUGIN_ID.length + 1));
+export function readStats(root: string, id: string): GameStats | undefined {
+  if (!id.startsWith(`${PLUGIN_ID}:`)) return undefined;
+  const parsed = parseEntryId(id.slice(PLUGIN_ID.length + 1));
   if (parsed === undefined) return undefined;
 
   const { runner, appName } = parsed;
-  const paths = dataPaths(root);
+  const sources = readSources(root);
 
-  const cached = cachedGames(root).find(
+  const cached = cachedGames(sources).find(
     (game) => game.runner === runner && game.appName === appName,
   );
   const gameInfo = cached?.gameInfo;
-  const local = readStore<LocalLibraryFile>(paths.localLibrary)?.games?.[appName];
-  const metadata = readStore<MetadataFile>(paths.metadata)?.games?.[metadataKey(runner, appName)];
-  const sessionList = readStore<SessionsFile>(paths.sessions)?.sessions?.[appName];
+  const local = sources.localLibrary[appName];
+  const metadata = sources.metadata[metadataKey(runner, appName)];
+  const sessionList = sources.sessions[appName];
   const sessions = sessionsOf(sessionList);
-  const timestamp = readStore<TimestampFile>(paths.timestamp)?.[appName];
-  const download = queuedDownload(root, runner, appName);
+  const timestamp = sources.timestamps[appName];
+  const download = queueDownloads(sources.downloads).get(entryId(runner, appName))?.element;
 
   if (
     gameInfo === undefined &&
@@ -303,29 +181,21 @@ export function readStats(root: string, entryId: string): GameStats | undefined 
     return undefined;
   }
 
-  const statuses =
-    readStore<StatusesFile>(paths.statuses)?.statuses?.filter(
-      (status) => nonEmpty(status.id) !== undefined,
-    ) ?? [];
+  const statuses = sources.statuses.filter((status) => nonEmpty(status.id) !== undefined);
   const playtime = timestamp?.totalPlayed;
   const playtimeMinutes =
-    Predicate.isNumber(playtime) && Number.isFinite(playtime) && playtime > 0
-      ? playtime
-      : undefined;
+    isNumber(playtime) && Number.isFinite(playtime) && playtime > 0 ? playtime : undefined;
   const title = nonEmpty(local?.title) ?? nonEmpty(metadata?.title) ?? nonEmpty(gameInfo?.title);
   const firstPlayed = nonEmpty(timestamp?.firstPlayed);
   const lastPlayed = nonEmpty(timestamp?.lastPlayed);
   const status = resolveStatus(local?.completionStatusId, statuses);
   const source = sourceLabel(local?.source);
-  const install =
-    download !== undefined
-      ? "downloading"
-      : isInstalled(root, runner, appName, gameInfo, local, metadata)
-        ? "installed"
-        : "missing";
+  const install = isInstalled(sources, runner, appName, gameInfo, local, metadata)
+    ? "installed"
+    : "missing";
 
   return {
-    entryId,
+    entryId: id,
     runner,
     appName,
     ...(title === undefined ? {} : { title }),
@@ -336,6 +206,7 @@ export function readStats(root: string, entryId: string): GameStats | undefined 
     ...(status === undefined ? {} : { status }),
     ...(source === undefined ? {} : { source }),
     install,
+    downloading: download !== undefined,
   };
 }
 
@@ -356,23 +227,12 @@ export function statusLines(stats: GameStats): readonly StatusLine[] {
   if (stats.firstPlayed !== undefined) texts.push(`First played: ${datePart(stats.firstPlayed)}`);
   if (stats.status !== undefined) texts.push(`Status: ${stats.status.name}`);
   if (stats.source !== undefined) texts.push(`Source: ${stats.source}`);
-  if (stats.install === "installed") texts.push("Installed");
-  else if (stats.install === "downloading") texts.push("Downloading in Heronite");
-  else texts.push("Not installed");
+  if (stats.downloading) texts.push("Downloading in Heronite");
+  else texts.push(stats.install === "installed" ? "Installed" : "Not installed");
 
   return texts
     .slice(0, MAX_STATUS_LINES)
     .map((text) => ({ level: "info" as const, text: text.slice(0, MAX_STATUS_LINE_LENGTH) }));
-}
-
-/**
- * Splits a provider entry's external id, `<runner>:<appName>`, at its first colon (ADR-0004).
- * Both halves must be non-empty; an app name may contain further colons.
- */
-export function parseEntryId(entryId: string): { runner: string; appName: string } | undefined {
-  const separator = entryId.indexOf(":");
-  if (separator <= 0 || separator === entryId.length - 1) return undefined;
-  return { runner: entryId.slice(0, separator), appName: entryId.slice(separator + 1) };
 }
 
 export type { GameSessions, GameStats, GameStatus };

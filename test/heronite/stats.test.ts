@@ -9,7 +9,7 @@ import { dirname, join } from "node:path";
 
 import { afterEach, describe, expect, test } from "bun:test";
 
-import { parseEntryId, readStats, statusLines } from "../../src/heronite/stats.js";
+import { readStats, statusLines } from "../../src/heronite/stats.js";
 
 const root = join(import.meta.dir, "..", "fixtures", "heronite-data");
 
@@ -34,33 +34,6 @@ function tempRoot(files: Readonly<Record<string, string | object>>): string {
 
 afterEach(() => {
   for (const dir of tempRoots.splice(0)) rmSync(dir, { recursive: true, force: true });
-});
-
-describe("parseEntryId", () => {
-  test("splits the external id at its first colon", () => {
-    expect(parseEntryId("sideload:ExampleSideload")).toEqual({
-      runner: "sideload",
-      appName: "ExampleSideload",
-    });
-    expect(parseEntryId("legendary:Calluna")).toEqual({
-      runner: "legendary",
-      appName: "Calluna",
-    });
-  });
-
-  test("an app name may contain colons; the runner may not", () => {
-    expect(parseEntryId("nile:amzn1.adg.product:Example")).toEqual({
-      runner: "nile",
-      appName: "amzn1.adg.product:Example",
-    });
-  });
-
-  test("a missing colon or an empty half is not an id", () => {
-    expect(parseEntryId("")).toBeUndefined();
-    expect(parseEntryId("sideload")).toBeUndefined();
-    expect(parseEntryId(":ExampleSideload")).toBeUndefined();
-    expect(parseEntryId("sideload:")).toBeUndefined();
-  });
 });
 
 describe("a played game", () => {
@@ -141,7 +114,10 @@ describe("install state", () => {
   });
 
   test("a live queue element is a download, never a finished history row", () => {
-    expect(readStats(root, "heronite:nile:amzn1.adg.product.Example")?.install).toBe("downloading");
+    const stats = readStats(root, "heronite:nile:amzn1.adg.product.Example");
+
+    expect(stats?.install).toBe("missing");
+    expect(stats?.downloading).toBe(true);
     // The fixture's failed game exists only in the history, so it is not a library game at all.
     expect(readStats(root, "heronite:legendary:ExampleFailedEpicApp")).toBeUndefined();
   });
@@ -382,11 +358,11 @@ describe("statusLines", () => {
   test("the install line speaks Heronite's language", () => {
     const base = statsOf("heronite:legendary:ExampleEpicApp");
 
-    expect(statusLines({ ...base, install: "missing" })).toContainEqual({
+    expect(statusLines({ ...base, install: "missing", downloading: false })).toContainEqual({
       level: "info",
       text: "Not installed",
     });
-    expect(statusLines({ ...base, install: "downloading" })).toContainEqual({
+    expect(statusLines({ ...base, install: "missing", downloading: true })).toContainEqual({
       level: "info",
       text: "Downloading in Heronite",
     });
@@ -405,6 +381,7 @@ describe("statusLines", () => {
       status: { id: "playing", name: "Playing" },
       source: "x".repeat(300),
       install: "missing",
+      downloading: false,
     };
 
     const lines = statusLines(wide);
@@ -418,7 +395,7 @@ describe("statusLines", () => {
 describe("readStats identity", () => {
   test("only heronite:-prefixed ids are ours", () => {
     expect(readStats(root, "steam:440")).toBeUndefined();
-    expect(readStats(root, "hydra:1234")).toBeUndefined();
+    expect(readStats(root, "other:1")).toBeUndefined();
     expect(readStats(root, "legendary:ExampleEpicApp")).toBeUndefined();
   });
 

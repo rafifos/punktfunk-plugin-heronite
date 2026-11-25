@@ -11,14 +11,27 @@ import type {
 } from "@punktfunk/plugin-kit/wire";
 import type { Collection, CollectionGame } from "./library.js";
 
-import { steamCdnUrl } from "@punktfunk/plugin-kit/library";
-
+import { STORE_RUNNERS } from "./identity.js";
 import { gameLaunch, type Transport } from "./launch.js";
+import { nonEmpty } from "./text.js";
 
-const STORE_RUNNERS: ReadonlySet<string> = new Set(["legendary", "gog", "nile"]);
+/**
+ * The kit's Steam CDN URLs, rebuilt here because `heronite/*` is pure (docs/port-plan.md): only
+ * `import type` from the kit is allowed, so the layer pulls in no package runtime.
+ */
+function steamCdnUrl(appId: number, kind: ArtKind): string | undefined {
+  // A non-Steam shortcut's app id has the high bit set and never resolves on the CDN.
+  if ((appId & 0x8000_0000) !== 0) return undefined;
 
-function nonEmpty(value: string | undefined): string | undefined {
-  return value !== undefined && value.trim() !== "" ? value : undefined;
+  const file =
+    kind === "portrait"
+      ? "library_600x900.jpg"
+      : kind === "hero"
+        ? "library_hero.jpg"
+        : kind === "logo"
+          ? "logo.png"
+          : "header.jpg";
+  return `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/${file}`;
 }
 
 /** The first candidate that is an absolute http(s) URL; Heronite's `localart:`/`file:` are skipped. */
@@ -127,9 +140,20 @@ function artwork(game: CollectionGame): Artwork | undefined {
   return Object.keys(art).length === 0 ? undefined : art;
 }
 
+/**
+ * The Steam identity a runner records: a sideload Steam entry, or a store game whose launch kind
+ * resolves to Steam. A store game's metadata `steamAppId` is recognition and art, not identity.
+ */
+function steamIdentity(game: CollectionGame): string | undefined {
+  const steamLaunch = game.local?.launchKind === "steam-uri";
+  const steamEntry = game.runner === "sideload" && game.appName.startsWith("steam_");
+  return steamLaunch || steamEntry ? game.steamAppId : undefined;
+}
+
 function catalogIds(game: CollectionGame): EntryIds | undefined {
   const ids: Record<string, string> = {};
-  if (game.steamAppId !== undefined) ids.steam = game.steamAppId;
+  const steam = steamIdentity(game);
+  if (steam !== undefined) ids.steam = steam;
   if (game.runner === "gog") ids.gog = game.appName;
   if (game.runner === "legendary") ids.epic = game.appName;
 

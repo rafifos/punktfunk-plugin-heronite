@@ -4,7 +4,9 @@
 import type { ProviderEntry } from "@punktfunk/plugin-kit/wire";
 
 import { existsSync } from "node:fs";
-import path from "node:path";
+
+import { pathApi } from "./paths.js";
+import { nonEmpty } from "./text.js";
 
 const PROGRAM_NAME = "heronite-rs";
 
@@ -22,13 +24,17 @@ interface LaunchEnvironment {
   readonly exists?: (file: string) => boolean;
 }
 
+/** The tile switches; the tiles read nothing else. */
+interface LauncherTileSettings {
+  readonly showLauncherTile?: boolean | undefined;
+  readonly showConsoleTile?: boolean | undefined;
+}
+
 interface LaunchSettings {
   /** The operator's "Heronite program folder" setting; empty means auto-detect. */
   readonly programFolder?: string | undefined;
   /** True when the chosen data root is inside the Flatpak sandbox. */
   readonly flatpak?: boolean | undefined;
-  readonly showLauncherTile?: boolean | undefined;
-  readonly showConsoleTile?: boolean | undefined;
 }
 
 type Transport =
@@ -36,14 +42,6 @@ type Transport =
   | { readonly kind: "run-program"; readonly program: string }
   | { readonly kind: "run-flatpak" }
   | { readonly kind: "open"; readonly template: "open" | "open-windows" };
-
-function pathApi(platform: NodeJS.Platform): typeof path.posix {
-  return platform === "win32" ? path.win32 : path.posix;
-}
-
-function nonEmpty(value: string | undefined): string | undefined {
-  return value !== undefined && value.trim() !== "" ? value : undefined;
-}
 
 function onPath(
   command: string,
@@ -86,10 +84,6 @@ function runnerArgs(runner: string, appName: string) {
 
 function programArgs(program: string) {
   return [{ name: "program", value: program }];
-}
-
-function hasProgram(transport: Transport): boolean {
-  return transport.kind !== "open";
 }
 
 function windowLaunch(transport: Transport) {
@@ -175,7 +169,7 @@ export function gameLaunch(transport: Transport, runner: string, appName: string
  */
 export function launcherTiles(
   transport: Transport,
-  settings: LaunchSettings = {},
+  settings: LauncherTileSettings = {},
 ): readonly ProviderEntry[] {
   const tiles: ProviderEntry[] = [];
 
@@ -188,8 +182,9 @@ export function launcherTiles(
     });
   }
 
+  // The console template only exists for a program; the protocol fallback has none.
   const console = consoleLaunch(transport);
-  if (settings.showConsoleTile !== false && hasProgram(transport) && console !== undefined) {
+  if (settings.showConsoleTile !== false && console !== undefined) {
     tiles.push({
       external_id: "console",
       title: "Heronite Console",
@@ -201,4 +196,4 @@ export function launcherTiles(
   return tiles;
 }
 
-export type { LaunchEnvironment, LaunchSettings, Transport };
+export type { LaunchEnvironment, LauncherTileSettings, LaunchSettings, Transport };

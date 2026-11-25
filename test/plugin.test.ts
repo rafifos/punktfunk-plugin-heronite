@@ -36,7 +36,7 @@ const pausedFixture = join(import.meta.dir, "fixtures", "heronite-data-paused");
 
 const decode = (raw: unknown) => Effect.runPromise(Schema.decodeUnknownEffect(HeroniteConfig)(raw));
 
-/** The fixture's settings, with the protocol transport pinned by a program folder no test box has. */
+/** The fixture's settings, with a configured program folder so launches use the headless form. */
 const settings = (overrides: Partial<HeroniteSettings> = {}): HeroniteSettings => ({
   dataDir: fixture,
   programDir: join(tmpdir(), "heronite-no-such-program"),
@@ -142,6 +142,26 @@ describe("settings wiring", () => {
       pluginDef.launchers(settings({ showLauncherTile: false, showConsoleTile: false })),
     ).toHaveLength(0);
   });
+
+  test("the fixture tree's tiles are pinned in both transport cases", () => {
+    // A configured program folder is a known program: the window and the console tile.
+    expect(pluginDef.launchers(settings()).map((tile) => tile.external_id)).toEqual([
+      "launcher",
+      "console",
+    ]);
+
+    // No program folder and no heronite-rs on PATH: the protocol fallback has no console tile.
+    const path = process.env.PATH;
+    process.env.PATH = join(temp, "empty-path");
+    try {
+      expect(
+        pluginDef.launchers(settings({ programDir: undefined })).map((tile) => tile.external_id),
+      ).toEqual(["launcher"]);
+    } finally {
+      if (path === undefined) delete process.env.PATH;
+      else process.env.PATH = path;
+    }
+  });
 });
 
 describe("parity compare", () => {
@@ -208,7 +228,7 @@ describe("per-game tab", () => {
     const game = await configured();
 
     expect(await Effect.runPromise(game.load("steam:440"))).toBeUndefined();
-    expect(await Effect.runPromise(game.load("hydra:ExampleSideload"))).toBeUndefined();
+    expect(await Effect.runPromise(game.load("other:1"))).toBeUndefined();
     expect(await Effect.runPromise(game.load("heronite:sideload:does-not-exist"))).toBeUndefined();
   });
 

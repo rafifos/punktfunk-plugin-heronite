@@ -66,10 +66,6 @@ function resolveContext(system: SystemContext): ResolvedContext {
   };
 }
 
-function pathApi(platform: NodeJS.Platform): PathApi {
-  return platform === "win32" ? path.win32 : path.posix;
-}
-
 function flatpakRoot(home: string, platform: NodeJS.Platform): string {
   return pathApi(platform).join(home, ".var", "app", FLATPAK_APP_ID, "data", "heronite");
 }
@@ -101,6 +97,11 @@ function linuxDataRoot(
       ? env.XDG_DATA_HOME
       : api.join(home, ".local", "share");
   return api.join(dataHome, "heronite");
+}
+
+/** The path flavour a platform's strings use; `launch` and `paths` share this one copy. */
+export function pathApi(platform: NodeJS.Platform): PathApi {
+  return platform === "win32" ? path.win32 : path.posix;
 }
 
 /**
