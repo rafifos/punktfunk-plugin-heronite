@@ -56,19 +56,24 @@ still appears, compare the game's environment — inside the session it carries
 `GAMESCOPE_WAYLAND_DISPLAY` and `PUNKTFUNK_GAMESCOPE_WSI=1`
 (`tr '\0' '\n' < /proc/<game pid>/environ`).
 
-**So neither has to be quit by hand**, add hooks to `~/.config/punktfunk/hooks.json`. A hook on
-`game.launching` filtered to the `native` plane with `hold: true` runs *before* the entry starts, and
-the launch waits for it — stop the desktop Steam and Heronite there, matching only processes
-**without** `GAMESCOPE_WAYLAND_DISPLAY` in their environment so the session's own are never touched. A
-second hook on `session.ended` starts them again once gamescope is gone. `hold` is what makes it
-deterministic: a connect-time hook races the launch and loses it. The same one-time result without
-hooks: turn off Steam's *Run Steam when my computer starts* and Heronite's *Start with the system*.
+**So neither has to be quit by hand**, install the two hooks. `hooks.json` supports `"hold": true` on
+`game.launching`: the launch waits for the hook, so it runs *before* the entry's command — a connect
+hook only races the launch and loses. From a checkout of this repository,
+`contrib/stream-prep/install.sh` copies both scripts and merges the three entries (`game.launching` →
+prep, `session.ended` and `host.started` → restore) into `~/.config/punktfunk/hooks.json`, then
+restarts the host:
 
-Two details those hooks have to get right. A Heronite stopped with a signal leaves its single-instance
-socket at `$XDG_RUNTIME_DIR/heronite-rs-*.sock`; the next start reads `ECONNRESET` from it and reports
-*already running but stopped responding*, so remove it once no instance is alive. And start the
-desktop apps through `systemd-run --user`, not a bare fork: a hook is killed with its process group
-when it returns.
+```sh
+contrib/stream-prep/install.sh   # HERONITE_PROGRAM_DIR=… if the AppImage is not in ~/Applications
+```
+
+The prep stops only processes **without** `GAMESCOPE_WAYLAND_DISPLAY` in their environment, so the
+session's own Heronite and Steam are never touched, and a desk launch is skipped outright. The restore
+starts them again once gamescope is gone, through `systemd-run --user` so they outlive the hook's
+process group. A stopped Heronite also leaves `$XDG_RUNTIME_DIR/heronite-rs-*.sock` behind — the next
+start reads `ECONNRESET` from it and reports *already running but stopped responding* — so the prep
+removes it once no instance is alive. The same one-time result without hooks: turn off Steam's *Run
+Steam when my computer starts* and Heronite's *Start with the system*.
 
 A streamed game entry also waits for the game's **own window** before the client shows it. The host
 reports the game `running` as soon as its process is up, but holds its splash until the window
