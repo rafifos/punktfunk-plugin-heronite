@@ -217,6 +217,17 @@ describe("parity compare", () => {
     expect(report.missing.map((entry) => entry.id)).toContain("heronite:sideload:DifferentGame");
     expect(report.extra.map((entry) => entry.id)).toContain("heronite:sideload:ExampleSideload");
   });
+
+  test("a baseline that cannot be read fails with the file it concerned", async () => {
+    const missing = join(temp, "no-such-baseline.json");
+    const error = await Effect.runPromise(
+      Effect.flip(compareParitySnapshot(missing, "heronite", [])),
+    );
+
+    expect(error._tag).toBe("ParitySnapshotError");
+    expect(error.operation).toBe("read");
+    expect(error.path).toBe(missing);
+  });
 });
 
 describe("per-game tab", () => {

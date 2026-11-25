@@ -45,7 +45,7 @@ import {
   type HostGameEntry,
   type ParityReport,
 } from "@punktfunk/plugin-kit/library";
-import { Duration, Effect, type Schema, Stream } from "effect";
+import { Duration, Effect, Schema, Stream } from "effect";
 
 /** {@link ServeUiInstall}, with the plugin's config as each handler's second argument. */
 const withConfig = <Cfg>(
@@ -135,6 +135,16 @@ export interface LibraryPluginWithUiDef<S extends Schema.Top> extends LibraryPlu
   readonly game?: (config: ConfigService<S>) => ServeUiGame<Schema.Top>;
 }
 
+/** A parity capture that could not be read or written, with the file it concerned. */
+export class ParitySnapshotError extends Schema.TaggedError<ParitySnapshotError>()(
+  "ParitySnapshotError",
+  {
+    operation: Schema.Literals(["read", "write"]),
+    path: Schema.String,
+    cause: Schema.String,
+  },
+) {}
+
 /**
  * Read a `parity --snapshot` capture and diff it against freshly produced entries. Split out of
  * the CLI so the release gate is testable without a running host.
@@ -143,11 +153,12 @@ export const compareParitySnapshot = Effect.fnUntraced(function* (
   baseline: string,
   store: string,
   entries: readonly ProviderEntry[],
-): Effect.fn.Return<ParityReport, Error> {
+): Effect.fn.Return<ParityReport, ParitySnapshotError> {
   const captured = yield* Effect.try({
     try: () =>
       JSON.parse(readFileSync(baseline, "utf8")) as readonly ReturnType<typeof fromHostEntry>[],
-    catch: (cause) => new Error(`read ${baseline}: ${cause}`),
+    catch: (cause) =>
+      new ParitySnapshotError({ operation: "read", path: baseline, cause: String(cause) }),
   });
   return diffParity(
     captured,
@@ -349,7 +360,12 @@ export const defineLibraryPluginWithUi = <S extends Schema.Top>(
               .sort((a, b) => a.id.localeCompare(b.id));
             yield* Effect.try({
               try: () => writeFileSync(snapshot, `${JSON.stringify(mine, null, 2)}\n`),
-              catch: (cause) => new Error(`write ${snapshot}: ${cause}`),
+              catch: (cause) =>
+                new ParitySnapshotError({
+                  operation: "write",
+                  path: snapshot,
+                  cause: String(cause),
+                }),
             });
             console.log(`captured ${mine.length} "${store ?? def.name}" entries to ${snapshot}`);
             return;
