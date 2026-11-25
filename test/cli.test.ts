@@ -1,9 +1,9 @@
 // The CLI verbs against a throwaway data root: `detect`, `scan --preview` and `paths` all work
-// offline, and the transport is pinned to the protocol fallback so a dev box with `heronite-rs`
-// cannot change what the assertions see.
+// offline, and each transport the assertions see is set up explicitly so a dev box's own
+// `heronite-rs` or configured folder cannot change them.
 
 import { spawnSync } from "node:child_process";
-import { cpSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -101,6 +101,27 @@ describe("cli", () => {
     expect(lines.some((line) => line.startsWith("warning: ") && line.includes("heronite://"))).toBe(
       true,
     );
+  });
+
+  test("paths warns that a running Heronite takes the launch and ends a streamed display", () => {
+    // Heronite is single-instance: with one already running (Start with the system), the launched
+    // process hands the request over and exits in milliseconds, so a dedicated display dies with
+    // it. The operator has to quit Heronite (or turn autostart off) before streaming.
+    const programDir = join(temp, "program");
+    mkdirSync(programDir, { recursive: true });
+    writeFileSync(join(programDir, "heronite-rs"), "");
+    mkdirSync(join(temp, "config", "plugin-state", "heronite"), { recursive: true });
+    writeFileSync(
+      join(temp, "config", "plugin-state", "heronite", "config.json"),
+      `${JSON.stringify({ programDir })}\n`,
+    );
+
+    const lines = run("paths").stdout.trimEnd().split("\n");
+
+    expect(lines).toContain(`transport: run-program (${join(programDir, "heronite-rs")})`);
+    expect(
+      lines.some((line) => line.startsWith("warning: ") && line.includes("single-instance")),
+    ).toBe(true);
   });
 
   test("with no data root, detect is absent and paths says so", () => {

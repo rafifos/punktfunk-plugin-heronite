@@ -280,6 +280,12 @@ code:
   lifetime is the launched command, so the display is torn down and the client reconnects. The
   plan's transport table keeps the fallback as the last resort for a host that streams its live
   desktop; streamed sessions need one of the three program transports.
+- **Single-instance hand-off.** The plan assumed `detect` hints keep a session alive when an
+  already-running Heronite takes the request. They keep the _session_, not the _display_: the host
+  spawns gamescope with the launch command as its child, and a hand-off caller exits in
+  milliseconds (measured: 58 ms), so gamescope ends and the display is torn down even though the
+  game starts in the other instance. The remedy is operational — quit Heronite, or turn off
+  **Start with the system**, before streaming — and the `paths` verb now says so.
 
 ## Known limitations
 

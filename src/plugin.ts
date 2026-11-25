@@ -108,18 +108,25 @@ const fileFound = (file: string): boolean => {
   }
 };
 
-/** What the operator sees for the chosen transport, and why the fallback needs a warning. */
+/** What the operator sees for the chosen transport, and the caveat each one carries. */
 function transportLines(transport: Transport): readonly string[] {
   const named =
     transport.kind === "run-program"
       ? `transport: run-program (${transport.program})`
       : `transport: ${transport.kind}`;
-  if (transport.kind !== "open") return [named];
+  if (transport.kind === "open") {
+    return [
+      named,
+      "warning: launches go through the heronite:// handler, which this plugin cannot verify is " +
+        "registered — without it xdg-open opens nothing, and a hand-off launch cannot hold a " +
+        "dedicated display. Set the Heronite program folder (heronite-rs or Heronite-*.AppImage).",
+    ];
+  }
   return [
     named,
-    "warning: launches go through the heronite:// handler, which this plugin cannot verify is " +
-      "registered — without it xdg-open opens nothing, and a hand-off launch cannot hold a " +
-      "dedicated display. Set the Heronite program folder (heronite-rs or Heronite-*.AppImage).",
+    "warning: Heronite is single-instance — a running Heronite (Start with the system) takes the " +
+      "launch and the caller exits at once, which ends a dedicated streamed display. Quit Heronite " +
+      "before streaming, or turn its autostart off.",
   ];
 }
 

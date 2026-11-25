@@ -37,11 +37,21 @@ long-lived process the host can follow — what a streamed session needs. Do not
 launch through `xdg-open` exits before anything appears. The `paths` verb prints which transport
 is in use and warns on the fallback.
 
-**Streaming:** the protocol fallback starts Heronite on the host's own screen. A client that asks
-for its own mode makes the host spin up a dedicated display whose lifetime is the launched
-command; a hand-off command exits at once, so the display goes away and the client reconnects.
-Give the plugin a program — `heronite-rs` on `PATH`, the program folder, or Flatpak — before
-streaming Heronite titles.
+**Streaming:** Heronite runs **one instance per data folder**. If Heronite is already open —
+including **Start with the system**, which is on by default in some setups — your launch hands the
+request to that instance and exits in milliseconds. A streamed session's dedicated display lives
+only as long as the launched command, so it is torn down and the client reconnects, while the game
+starts on the host's own screen. **Quit Heronite (or turn off Start with the system) before
+streaming**: the plugin then starts Heronite inside the streamed session, where it stays until the
+game ends. Let punktfunk own the compositor too: if your launch options wrap the game in another
+launcher's gamescope (goverlay, for example), use a profile without gamescope for streaming and
+keep only the overlay tools.
+
+The protocol fallback starts Heronite on the host's own screen. A client that asks for its own mode
+makes the host spin up a dedicated display whose lifetime is the launched command; a hand-off
+command exits at once, so the display goes away and the client reconnects. Give the plugin a
+program — `heronite-rs` on `PATH`, the program folder, or Flatpak — before streaming Heronite
+titles.
 
 **Flatpak:** nothing to set. The Flatpak's data folder
 (`~/.var/app/app.heronite.Heronite/data/heronite`) is found by itself, and launches go through
