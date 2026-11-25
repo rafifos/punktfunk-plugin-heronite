@@ -44,9 +44,12 @@ jobs:
         with:
           node-version: 24
 
+      # Pinned rather than @latest: the trusted-publishing exchange is a version-sensitive code
+      # path on npm's side, and a floating toolchain turns a registry change nobody here made into
+      # a release that fails for no reason in this repository. 12.2.3 published 0.1.1.
       - name: Use an npm that can use trusted publishing
         run: |
-          npm install -g npm@latest
+          npm install -g npm@12.2.3
           npm --version
 
       - name: Install
@@ -82,6 +85,15 @@ jobs:
           else
             echo "publish=true" >>"$GITHUB_OUTPUT"
           fi
+
+      # npm answers a refused exchange with a bare `ENEEDAUTH` and keeps the registry's reason for
+      # its debug log, so the one piece of information that identifies the fix never reaches this
+      # page. Ask the registry the same question first and print its answer.
+      - name: Preflight the trusted publisher
+        if: steps.check.outputs.publish == 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.npm-token }}
+        run: bun scripts/preflight-trusted-publish.ts
 
       # Which credential this run has, in the log, before anything fails. A repository secret wins
       # while it exists; otherwise the run's OIDC identity is the only credential, and it can only

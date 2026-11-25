@@ -309,6 +309,23 @@ npm trust github @rafifos/plugin-heronite \
 npm trust list @rafifos/plugin-heronite
 ```
 
+npm reports a refused exchange as a bare `ENEEDAUTH` and keeps the registry's reason for its debug
+log, so `publish.yml` asks the registry the same question first
+([preflight-trusted-publish.ts](scripts/preflight-trusted-publish.ts)) and prints the answer. A
+binding that no longer matches — a renamed repository, a renamed workflow file, a deleted entry —
+therefore names itself in the run summary instead of sending you to `--loglevel verbose`:
+
+```
+::error::the registry refused the OIDC exchange for @rafifos/plugin-heronite (HTTP 404: …)
+::error::bind or re-bind the workflow, then re-run: npm trust github …
+```
+
+Re-running the workflow after a re-bind is the whole repair: a version already on the registry is a
+no-op, and a version that failed to publish is still absent, so it goes out on the retry. Publish
+through the workflow rather than by hand even in an emergency — a manual publish carries no
+attestation, and an npm version cannot be re-published to add one, so repairing it costs a patch
+release.
+
 ### The first version, once
 
 A trusted relationship can only be bound to a package that already exists, so version `0.1.0` needs
