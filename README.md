@@ -223,10 +223,11 @@ npm trust list @rafifos/plugin-heronite
 ```
 
 `--allow-publish` matters: a new relationship is allowed `npm stage publish` only, so plain
-`npm publish` from the workflow is refused without it. The workflow file to name is `publish.yml`,
-the one that holds the publishing job — a reusable workflow's jobs keep their own file's identity in
-the OIDC claims. If the registry rejects that with a workflow mismatch, add a second relationship for
-`release-please.yml`, the file that calls it; a package may hold up to ten.
+`npm publish` from the workflow is refused without it. Name `publish.yml`, the file that holds the
+publishing job: a reusable workflow's jobs keep their own file's identity in the OIDC claims, which
+is what this repository's `v0.1.1` release proved — the run logged
+`credential: OIDC (trusted publishing)`, signed a provenance statement and published. `0.1.0` was
+the manual bootstrap and carries no attestation; every release from `0.1.1` on does.
 
 `bootstrap-sha` in `release-please-config.json` is `d537e40`, the parent of `190d767`, the first
 commit of this repository's own history, so every changelog starts at `190d767` and never reaches the
