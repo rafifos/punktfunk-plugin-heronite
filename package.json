@@ -23,7 +23,9 @@
     "punktfunk-plugin-heronite": "./dist/cli.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "LICENSE-MIT",
+    "LICENSE-APACHE"
   ],
   "punktfunk": {
     "schema": 1,
