@@ -39,8 +39,10 @@
     ],
     "exec": {
       "run": {
-        "exe": "heronite-rs",
+        "exe": "env",
         "args": [
+          "PROTON_ENABLE_WAYLAND=0",
+          "heronite-rs",
           "--no-gui",
           "--launch",
           "{runner}",
@@ -52,8 +54,10 @@
         }
       },
       "run-program": {
-        "exe": "{program}",
+        "exe": "env",
         "args": [
+          "PROTON_ENABLE_WAYLAND=0",
+          "{program}",
           "--no-gui",
           "--launch",
           "{runner}",
@@ -66,8 +70,10 @@
         }
       },
       "run-flatpak": {
-        "exe": "flatpak",
+        "exe": "env",
         "args": [
+          "PROTON_ENABLE_WAYLAND=0",
+          "flatpak",
           "run",
           "app.heronite.Heronite",
           "--no-gui",
@@ -99,33 +105,45 @@
         }
       },
       "window": {
-        "exe": "heronite-rs",
-        "args": []
+        "exe": "env",
+        "args": [
+          "PROTON_ENABLE_WAYLAND=0",
+          "heronite-rs"
+        ]
       },
       "window-program": {
-        "exe": "{program}",
-        "args": [],
+        "exe": "env",
+        "args": [
+          "PROTON_ENABLE_WAYLAND=0",
+          "{program}"
+        ],
         "params": {
           "program": "path"
         }
       },
       "window-flatpak": {
-        "exe": "flatpak",
+        "exe": "env",
         "args": [
+          "PROTON_ENABLE_WAYLAND=0",
+          "flatpak",
           "run",
           "app.heronite.Heronite"
         ]
       },
       "console": {
-        "exe": "heronite-rs",
+        "exe": "env",
         "args": [
+          "PROTON_ENABLE_WAYLAND=0",
+          "heronite-rs",
           "--console",
           "--fullscreen"
         ]
       },
       "console-program": {
-        "exe": "{program}",
+        "exe": "env",
         "args": [
+          "PROTON_ENABLE_WAYLAND=0",
+          "{program}",
           "--console",
           "--fullscreen"
         ],
@@ -134,8 +152,10 @@
         }
       },
       "console-flatpak": {
-        "exe": "flatpak",
+        "exe": "env",
         "args": [
+          "PROTON_ENABLE_WAYLAND=0",
+          "flatpak",
           "run",
           "app.heronite.Heronite",
           "--console",

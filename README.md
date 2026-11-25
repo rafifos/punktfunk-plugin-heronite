@@ -117,10 +117,28 @@ host forks it — so the choice is where the variable is set:
 | ------------------------------------------------------------------------------------------------------------- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Steam launch options (`env -u WAYLAND_DISPLAY %command%`)                                                     | one game                                | zero risk, what the line above does                                                                                                                                                                                          |
 | `PROTON_ENABLE_WAYLAND=0` exported once for the session (user manager, or `systemctl --user set-environment`) | every Proton title, streams and desktop | `check_environment` _discards_ the feature on `0`, so this wins over `WAYLAND_DISPLAY` being present; it also reaches the game through Steam's runtime, which re-adds `WAYLAND_DISPLAY` but passes unknown variables through |
-| Nothing — leave `WAYLAND_DISPLAY` alone and set the variable on the launcher the plugin starts                | plugin-level                            | needs `exe: "env"` in the manifest, since `ExecTemplate` has no `env` field                                                                                                                                                  |
+| Nothing — this plugin's manifest already does it                                                              | every game launched through this plugin | see below                                                                                                                                                                                                                    |
 
 The diagnostics log records `PROTON_ENABLE_WAYLAND`, `PROTON_USE_WAYLAND` and `SDL_VIDEODRIVER` for
 every game process, so whichever route you pick, the log says whether it arrived.
+
+**The plugin already applies the last row.** Every transport that starts Heronite is an `env` call
+rather than the program itself:
+
+```json
+"run-program": {
+  "exe": "env",
+  "args": ["PROTON_ENABLE_WAYLAND=0", "{program}", "--no-gui", "--launch", "{runner}", "{appName}"]
+}
+```
+
+Heronite hands its environment to the Steam it starts, and Steam passes unknown variables through to
+the game, so every Proton title launched through this plugin runs with Wine's Wayland driver off — no
+per-game launch option, and HDR is untouched. It is an `env` prefix rather than a setting because
+`ExecTemplate` has no environment field and the host reads the manifest before the plugin runs, so a
+console toggle cannot change it. To turn it off, drop the leading `PROTON_ENABLE_WAYLAND=0` and restore
+the original `exe` in [package.json](package.json); `test/manifest.test.ts` pins the nine wrapped
+transports so a reformat cannot quietly lose it.
 
 The prep stops only processes **without** `GAMESCOPE_WAYLAND_DISPLAY` in their environment, so the
 session's own Heronite and Steam are never touched, and a desk launch is skipped outright. It also
