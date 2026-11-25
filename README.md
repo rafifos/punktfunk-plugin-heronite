@@ -113,14 +113,36 @@ none of which reads `WAYLAND_DISPLAY`.
 A hook cannot do this for you — it is a separate process, and a child's environment is fixed when the
 host forks it — so the choice is where the variable is set:
 
-| Where                                                                                                         | Scope                                   | Notes                                                                                                                                                                                                                        |
-| ------------------------------------------------------------------------------------------------------------- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Steam launch options (`env -u WAYLAND_DISPLAY %command%`)                                                     | one game                                | zero risk, what the line above does                                                                                                                                                                                          |
-| `PROTON_ENABLE_WAYLAND=0` exported once for the session (user manager, or `systemctl --user set-environment`) | every Proton title, streams and desktop | `check_environment` _discards_ the feature on `0`, so this wins over `WAYLAND_DISPLAY` being present; it also reaches the game through Steam's runtime, which re-adds `WAYLAND_DISPLAY` but passes unknown variables through |
-| Nothing — this plugin's manifest already does it                                                              | every game launched through this plugin | see below                                                                                                                                                                                                                    |
+| Where                                                   | Scope                          | Measured result                                                                                                                                                   |
+| ------------------------------------------------------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Steam launch options `env -u WAYLAND_DISPLAY %command%` | one game                       | **works** — it runs after everything else, so nothing re-adds the variable                                                                                        |
+| `PROTON_ENABLE_WAYLAND=0`                               | every Proton title             | **does not work** — the game arrived without the variable at all: Steam's runtime drops `PROTON_*` when it builds the game's environment, so Proton never sees it |
+| the plugin's own launch (`exe: "env"`)                  | every game through this plugin | **does not work** — same reason: the value is set two processes too early and the game process never receives it                                                  |
+
+The working line, once per title, in Steam → the game → Properties → Launch Options:
+
+```
+env -u WAYLAND_DISPLAY %command%
+```
+
+There is no global equivalent: Steam has no session-wide launch options, and the variable is re-added
+inside its runtime container after any launcher-level attempt. A title with a launch option already
+set keeps it — just add the prefix.
 
 The diagnostics log records `PROTON_ENABLE_WAYLAND`, `PROTON_USE_WAYLAND` and `SDL_VIDEODRIVER` for
 every game process, so whichever route you pick, the log says whether it arrived.
+
+A game **already running at the desk** is handled by title: if its Steam AppId matches the entry
+being launched, the prep stops it too — otherwise the session's Heronite hands the launch to the
+desktop instance and exits, which tears the display down and reconnects in a loop. A _different_
+title running at the desk is left alone, with a line in the journal saying so.
+
+Two opt-outs, for the hook's `run` string or the installer's environment:
+
+```sh
+PUNKTFUNK_PREP=0     # never stop anything; close Steam/Heronite yourself before a stream
+PUNKTFUNK_RESTORE=0  # never start them again when a session ends
+```
 
 **The plugin already applies the last row.** Every transport that starts Heronite is an `env` call
 rather than the program itself:
@@ -139,18 +161,6 @@ per-game launch option, and HDR is untouched. It is an `env` prefix rather than 
 console toggle cannot change it. To turn it off, drop the leading `PROTON_ENABLE_WAYLAND=0` and restore
 the original `exe` in [package.json](package.json); `test/manifest.test.ts` pins the nine wrapped
 transports so a reformat cannot quietly lose it.
-
-A game **already running at the desk** is handled by title: if its Steam AppId matches the entry
-being launched, the prep stops it too — otherwise the session's Heronite hands the launch to the
-desktop instance and exits, which tears the display down and reconnects in a loop. A _different_
-title running at the desk is left alone, with a line in the journal saying so.
-
-Two opt-outs, for the hook's `run` string or the installer's environment:
-
-```sh
-PUNKTFUNK_PREP=0     # never stop anything; close Steam/Heronite yourself before a stream
-PUNKTFUNK_RESTORE=0  # never start them again when a session ends
-```
 
 The prep stops only processes **without** `GAMESCOPE_WAYLAND_DISPLAY` in their environment, so the
 session's own Heronite and Steam are never touched, and a desk launch is skipped outright. It also
