@@ -43,6 +43,7 @@ fetch() {
 mkdir -p "$bin" "$conf"
 fetch punktfunk-stream-prep.sh "$bin/punktfunk-stream-prep.sh"
 fetch punktfunk-stream-restore.sh "$bin/punktfunk-stream-restore.sh"
+fetch punktfunk-stream-capture.sh "$bin/punktfunk-stream-capture.sh"
 
 python3 - "$hooks" "$bin" <<'PY'
 import json
@@ -52,6 +53,7 @@ import sys
 path, bin_dir = sys.argv[1], sys.argv[2]
 prep = os.path.join(bin_dir, "punktfunk-stream-prep.sh")
 restore = os.path.join(bin_dir, "punktfunk-stream-restore.sh")
+capture = os.path.join(bin_dir, "punktfunk-stream-capture.sh")
 ours = [
     {
         "on": "game.launching",
@@ -60,6 +62,7 @@ ours = [
         "hold": True,
         "timeout_s": 60,
     },
+    {"on": "game.running", "run": capture, "timeout_s": 60},
     {"on": "session.ended", "run": restore, "timeout_s": 60},
     {"on": "host.started", "run": restore, "timeout_s": 60},
 ]
@@ -70,7 +73,8 @@ try:
 except FileNotFoundError:
     config = {}
 
-kept = [h for h in config.get("hooks", []) if not (isinstance(h, dict) and h.get("run") in (prep, restore))]
+owned = (prep, restore, capture)
+kept = [h for h in config.get("hooks", []) if not (isinstance(h, dict) and h.get("run") in owned)]
 config["hooks"] = kept + ours
 
 with open(path, "w") as f:
@@ -83,4 +87,4 @@ PY
 systemctl --user restart punktfunk-host 2>/dev/null ||
     systemctl restart punktfunk-host 2>/dev/null ||
     echo "restart the host yourself; hooks apply from the next event"
-echo "installed: $bin/punktfunk-stream-{prep,restore}.sh + $hooks"
+echo "installed: $bin/punktfunk-stream-{prep,restore,capture}.sh + $hooks"

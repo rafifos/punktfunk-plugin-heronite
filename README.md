@@ -71,6 +71,18 @@ after an update is safe. `PLUGIN_REF=…` pins the ref it downloads from, and
 `HERONITE_PROGRAM_DIR=…` names the app folder if the AppImage is not in `~/Applications`. From a
 checkout, `contrib/stream-prep/install.sh` installs the files beside it instead of downloading.
 
+The same install adds a `game.running` hook that writes
+`~/.local/state/punktfunk/stream-diagnostics.log`: one block per launched game listing the Wine,
+Proton and session processes with their `DISPLAY`, `WAYLAND_DISPLAY`, `GAMESCOPE_WAYLAND_DISPLAY`
+and WSI variables. That is the difference between a game rendering inside the session and one that
+escaped to the desktop — the gamescope layer only ever reports a non-gamescope swapchain for the
+second — so a black screen leaves the answer behind instead of needing someone at a terminal while
+it happens:
+
+```sh
+tail -20 ~/.local/state/punktfunk/stream-diagnostics.log
+```
+
 The prep stops only processes **without** `GAMESCOPE_WAYLAND_DISPLAY` in their environment, so the
 session's own Heronite and Steam are never touched, and a desk launch is skipped outright. It also
 leaves everything alone when a Steam game is running at the desk — killing an unsaved session is worse
