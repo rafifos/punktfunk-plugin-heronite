@@ -56,6 +56,14 @@ still appears, compare the game's environment — inside the session it carries
 `GAMESCOPE_WAYLAND_DISPLAY` and `PUNKTFUNK_GAMESCOPE_WSI=1`
 (`tr '\0' '\n' < /proc/<game pid>/environ`).
 
+**So neither has to be quit by hand**, add hooks to `~/.config/punktfunk/hooks.json`. A hook on
+`game.launching` filtered to the `native` plane with `hold: true` runs *before* the entry starts, and
+the launch waits for it — stop the desktop Steam and Heronite there, matching only processes
+**without** `GAMESCOPE_WAYLAND_DISPLAY` in their environment so the session's own are never touched. A
+second hook on `session.ended` starts them again once gamescope is gone. `hold` is what makes it
+deterministic: a connect-time hook races the launch and loses it. The same one-time result without
+hooks: turn off Steam's *Run Steam when my computer starts* and Heronite's *Start with the system*.
+
 A streamed game entry also waits for the game's **own window** before the client shows it. The host
 reports the game `running` as soon as its process is up, but holds its splash until the window
 reaches the screen — "often far later than its process: a Proton prefix build, a splash on a black
