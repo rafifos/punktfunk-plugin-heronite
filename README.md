@@ -105,7 +105,7 @@ env -u WAYLAND_DISPLAY %command%
 ```
 
 `env -u` unsets it rather than blanking it, and that difference matters: Proton decides on the
-variable's *presence*, `if "wayland" in self.compat_config and "WAYLAND_DISPLAY" in self.env`, so an
+variable's _presence_, `if "wayland" in self.compat_config and "WAYLAND_DISPLAY" in self.env`, so an
 empty value still enables the Wayland driver. HDR is unaffected either way — the HDR10 swapchain comes
 from the gamescope WSI layer over X11 (`--hdr-enabled`, `PUNKTFUNK_GAMESCOPE_WSI=1`, `DXVK_HDR=1`),
 none of which reads `WAYLAND_DISPLAY`.
