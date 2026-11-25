@@ -153,7 +153,7 @@
     "test": "bun test",
     "build": "bun build src/index.ts src/cli.ts --target=bun --outdir dist --external effect --external '@punktfunk/*'",
     "prepublishOnly": "bun run build",
-    "check": "biome check --write ."
+    "check": "biome check --write --unsafe ."
   },
   "dependencies": {
     "@punktfunk/host": "^0.6.0",
