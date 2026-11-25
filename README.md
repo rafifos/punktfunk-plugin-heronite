@@ -64,6 +64,12 @@ second hook on `session.ended` starts them again once gamescope is gone. `hold` 
 deterministic: a connect-time hook races the launch and loses it. The same one-time result without
 hooks: turn off Steam's *Run Steam when my computer starts* and Heronite's *Start with the system*.
 
+Two details those hooks have to get right. A Heronite stopped with a signal leaves its single-instance
+socket at `$XDG_RUNTIME_DIR/heronite-rs-*.sock`; the next start reads `ECONNRESET` from it and reports
+*already running but stopped responding*, so remove it once no instance is alive. And start the
+desktop apps through `systemd-run --user`, not a bare fork: a hook is killed with its process group
+when it returns.
+
 A streamed game entry also waits for the game's **own window** before the client shows it. The host
 reports the game `running` as soon as its process is up, but holds its splash until the window
 reaches the screen — "often far later than its process: a Proton prefix build, a splash on a black
