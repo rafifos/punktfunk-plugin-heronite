@@ -213,11 +213,11 @@ describe("toEntry art chain", () => {
     });
   });
 
-  test("localart:, file: and relative values are skipped", () => {
+  test("localart: and file: become paths the host serves, and a relative value stays out", () => {
     const entry = toEntry(
       game({
         art: {
-          coverUrl: "localart://art/x/cover.png",
+          coverUrl: "localart://metadata-art/sideload_x/cover.jpg",
           heroUrl: "file:///games/hero.jpg",
           logoUrl: "/relative/logo.png",
         },
@@ -233,14 +233,46 @@ describe("toEntry art chain", () => {
         },
       }),
       run,
+      "/data/heronite",
     );
 
+    // Heronite's own store wins over the remote fallbacks, and its scheme is not a URL either:
+    // `localart://` is relative to `local_library`, `file://` is already absolute.
     expect(entry?.art).toEqual({
-      portrait: "https://meta.example/square.jpg",
-      hero: "https://meta.example/wide.jpg",
+      portrait: expect.stringContaining("/data/heronite/local_library/metadata-art/"),
+      hero: "/games/hero.jpg",
       logo: "https://meta.example/logo.png",
       header: "https://meta.example/wide.jpg",
     });
+    expect(entry?.art?.portrait).toBe(
+      join("/data/heronite", "local_library", "metadata-art/sideload_x/cover.jpg"),
+    );
+  });
+
+  test("without a data root no local art is offered, because none could be served", () => {
+    const entry = toEntry(game({ art: { coverUrl: "localart://metadata-art/x/cover.jpg" } }), run);
+
+    expect(entry).not.toHaveProperty("art");
+  });
+
+  test("a localart: path that climbs out of local_library is refused", () => {
+    const entry = toEntry(
+      game({ art: { coverUrl: "localart://../../etc/passwd.png" } }),
+      run,
+      "/data/heronite",
+    );
+
+    expect(entry).not.toHaveProperty("art");
+  });
+
+  test("the header slot uses Heronite's headerUrl", () => {
+    const entry = toEntry(
+      game({ metadata: { headerUrl: "https://shared.example/header.jpg" } }),
+      run,
+      "/data/heronite",
+    );
+
+    expect(entry?.art?.header).toBe("https://shared.example/header.jpg");
   });
 
   test("portrait prefers tall art and hero prefers wide art", () => {
@@ -276,7 +308,7 @@ describe("toEntry art chain", () => {
     });
   });
 
-  test("no valid URL means no art object at all", () => {
+  test("nothing servable means no art object at all", () => {
     const entry = toEntry(
       game({
         art: { coverUrl: "localart://art/x/cover.png" },

@@ -85,7 +85,7 @@ Files used:
 | `store/config.json`                  | hidden games, favourites                                            |
 | `local_library/library.json`         | launch kind, executable, ROMs, emulator ids, status                 |
 | `local_library/metadata.json`        | title, description, developers, publishers, genres, dates, art URLs |
-| `local_library/art.json`             | art set by hand (remote URLs only; `localart:` is skipped)          |
+| `local_library/art.json`             | art set by hand (remote URLs, or `localart:` resolved to a path)    |
 | `local_library/emulators.json`       | emulator profiles and platform names                                |
 | `local_library/copies.json`          | copy groups linked by the user                                      |
 | `local_library/sessions.json`        | per-game sessions (tab)                                             |
@@ -115,8 +115,9 @@ Each provider entry carries:
 
 - `external_id`: `<runner>:<appName>`; `title`: the displayed title;
 - `launch`: transport-dependent (below);
-- `art`: custom remote art, then fetched metadata, then the store's `art_square`/`art_cover`, then
-  `art_background`, then Steam CDN by app id; `logo` from the same chain;
+- `art`: custom art, then fetched metadata (including Heronite's `headerUrl`), then the store's
+  `art_square`/`art_cover`, then `art_background`, then Steam CDN by app id; `logo` from the same
+  chain. A `localart:` candidate resolves to the file it names and outranks every remote fallback;
 - `platform`: the emulator profile's platform name for emulator titles, `PC` otherwise;
 - `ids.steam` / `ids.gog` / `ids.epic` when the runner gives one;
 - `developer`, `publisher`, `description`, `release_year`, `genres` from collection metadata;
@@ -190,7 +191,7 @@ read-only, with a short status list and an empty form.
 }
 ```
 
-No `writes`, no `network`, no `registry`: art is remote URLs the host fetches, and the plugin writes
+No `writes`, no `network`, no `registry`: art is URLs the host fetches or paths it reads, and the plugin writes
 only its own state. The program and data folders come from operator-granted `handedPath` fields,
 so portable copies and odd installs work without widening the manifest.
 
@@ -323,7 +324,8 @@ code:
 - No download percentage, speed or ETA, and no way to tell whether Heronite is running.
 - A download interrupted by killing Heronite stays `downloading` until Heronite writes the file.
 - Install state is Heronite's, so a game deleted outside it can linger.
-- Only remote art is used; `localart:` files are skipped.
+- Remote art is used as-is and `localart:` is resolved to the file it names, because the host's art
+  proxy reads a local path inside an allowed root as readily as it fetches a URL.
 - Only user-made copy groups are collapsed, not automatic twins.
 - The protocol fallback drops titles whose encoded URL exceeds 128 characters.
 - No client bundles a Heronite launcher icon, so both tiles show their names until one is added

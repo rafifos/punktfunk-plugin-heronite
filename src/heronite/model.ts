@@ -268,6 +268,7 @@ export interface CollectionMetadata {
   readonly coverSquareUrl?: string;
   readonly coverWideUrl?: string;
   readonly logoUrl?: string;
+  readonly headerUrl?: string;
   readonly fieldSources?: Record<string, string>;
   readonly fetchedAt?: string;
   readonly fetchError?: string;

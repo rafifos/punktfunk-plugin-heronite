@@ -83,7 +83,7 @@ const transportFor = (cfg: HeroniteSettings, root: DataRoot | undefined) =>
 const scanNow = (cfg: HeroniteSettings): readonly ProviderEntry[] => {
   const root = resolveRoot(cfg);
   if (root === undefined) return [];
-  return buildEntries(assembleCollection(root.root), transportFor(cfg, root));
+  return buildEntries(assembleCollection(root.root), transportFor(cfg, root), root.root);
 };
 
 const tilesNow = (cfg: HeroniteSettings): readonly ProviderEntry[] => {

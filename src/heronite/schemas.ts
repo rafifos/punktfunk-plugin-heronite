@@ -205,6 +205,7 @@ const CollectionMetadata = Schema.Struct({
   coverSquareUrl: text,
   coverWideUrl: text,
   logoUrl: text,
+  headerUrl: text,
   fieldSources: Schema.optionalKey(Schema.Record(Schema.String, Schema.String)),
   fetchedAt: text,
   fetchError: text,
