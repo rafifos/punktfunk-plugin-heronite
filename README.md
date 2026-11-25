@@ -129,6 +129,27 @@ There is no global equivalent: Steam has no session-wide launch options, and the
 inside its runtime container after any launcher-level attempt. A title with a launch option already
 set keeps it — just add the prefix.
 
+When another tool already owns the launch line — goverlay, for instance, writes
+`"…/bgmod" -- env gamemoderun %command%` — the prefix goes **after the `--`**, which is where bgmod
+hands over, and **before** the program:
+
+```
+"…/goverlay/gameconfig/global/bgmod" -- env -u WAYLAND_DISPLAY gamemoderun %command%
+```
+
+bgmod reads the `bgmod.conf` that sits **next to its own binary** (measured), and its `[Env]` section is
+exported to the game, so a per-game copy does the same without touching Steam:
+
+```ini
+[Env]
+WAYLAND_DISPLAY=
+```
+
+That exports the key empty rather than removing it — enough here, but `env -u` is the stricter form.
+Put it in `gameconfig/<Game>/bgmod.conf` and point that game's launch option at that folder's `bgmod`;
+the `global/bgmod.conf` copy applies to every goverlay-wrapped title, desktop included, and it already
+carries `PROTON_ENABLE_HDR=1` and `ENABLE_HDR_WSI=1`.
+
 The diagnostics log records `PROTON_ENABLE_WAYLAND`, `PROTON_USE_WAYLAND` and `SDL_VIDEODRIVER` for
 every game process, so whichever route you pick, the log says whether it arrived.
 
