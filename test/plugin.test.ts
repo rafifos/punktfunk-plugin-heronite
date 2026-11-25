@@ -1,7 +1,8 @@
-// The plugin's settings: decoding defaults, the console's derived JSON Schema, and the watch/scan
-// wiring a saved change drives.
+// The plugin's settings: decoding defaults, the console's derived JSON Schema, the watch/scan
+// wiring a saved change drives, and the read-only per-game tab.
 
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -152,6 +153,85 @@ describe("parity compare", () => {
     expect(report.ok).toBe(false);
     expect(report.missing.map((entry) => entry.id)).toContain("heronite:sideload:DifferentGame");
     expect(report.extra.map((entry) => entry.id)).toContain("heronite:sideload:ExampleSideload");
+  });
+});
+
+describe("per-game tab", () => {
+  /** A config service already pointed at the fixture, the way the console's saved settings do. */
+  const configured = async () => {
+    const service = await Effect.runPromise(
+      makeConfigService({ schema: HeroniteConfig }).pipe(
+        Effect.provide(pluginInfoLayer({ name: "heronite" })),
+      ),
+    );
+    await Effect.runPromise(service.saveRaw({ dataDir: fixture }));
+    const game = pluginDef.game(service);
+    return game;
+  };
+
+  /** Every fixture file's path, size, mtime and content digest, sorted for a stable comparison. */
+  const snapshotTree = (dir: string): string => {
+    const rows: string[] = [];
+    const walk = (current: string): void => {
+      for (const name of readdirSync(current).sort()) {
+        const file = join(current, name);
+        const stat = statSync(file);
+        if (stat.isDirectory()) {
+          walk(file);
+          continue;
+        }
+        const digest = createHash("sha256").update(readFileSync(file)).digest("hex");
+        rows.push(`${file}:${stat.size}:${stat.mtimeMs}:${digest}`);
+      }
+    };
+    walk(dir);
+    return rows.join("\n");
+  };
+
+  test("load gives no tab for ids that are not this plugin's or not Heronite's games", async () => {
+    const game = await configured();
+
+    expect(await Effect.runPromise(game.load("steam:440"))).toBeUndefined();
+    expect(await Effect.runPromise(game.load("hydra:ExampleSideload"))).toBeUndefined();
+    expect(await Effect.runPromise(game.load("heronite:sideload:does-not-exist"))).toBeUndefined();
+  });
+
+  test("load answers the fixture's stats for a heronite entry", async () => {
+    const game = await configured();
+
+    const value = await Effect.runPromise(game.load("heronite:sideload:ExampleSideload"));
+
+    expect(value).toMatchObject({
+      entryId: "heronite:sideload:ExampleSideload",
+      runner: "sideload",
+      appName: "ExampleSideload",
+      title: "Example Sideload Game",
+      source: "Manual",
+      install: "installed",
+    });
+  });
+
+  test("status lines describe a loaded game and stay empty for other ids", async () => {
+    const game = await configured();
+
+    const lines = await Effect.runPromise(
+      game.status?.("heronite:legendary:ExampleEpicApp") ?? Effect.succeed([]),
+    );
+    expect(lines.map((line) => line.text)).toContain("Playtime: 2 h 32 m");
+    expect(lines.map((line) => line.text)).toContain("Status: Playing");
+
+    expect(await Effect.runPromise(game.status?.("steam:440") ?? Effect.succeed([]))).toEqual([]);
+  });
+
+  test("save resolves without touching a single Heronite file", async () => {
+    const game = await configured();
+    const before = snapshotTree(fixture);
+
+    await Effect.runPromise(game.save("heronite:sideload:ExampleSideload", {}));
+    // Loading must be read-only too: the console calls both when a tab opens.
+    await Effect.runPromise(game.load("heronite:sideload:ExampleSideload"));
+
+    expect(snapshotTree(fixture)).toBe(before);
   });
 });
 

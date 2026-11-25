@@ -1,9 +1,10 @@
-// The plugin's definition: the four settings, the scan/launchers/watches, and the CLI's `paths`
-// verb. Downloads, install asks and the per-game tab arrive in later milestones.
+// The plugin's definition: the four settings, the scan/launchers/watches, the read-only per-game
+// tab, and the CLI's `paths` verb. Downloads and install asks arrive in the next milestone.
 
-import type { CliCommand } from "@punktfunk/plugin-kit";
+import type { CliCommand, ConfigService, ServeUiGame, StatusLine } from "@punktfunk/plugin-kit";
 import type { ProviderEntry } from "@punktfunk/plugin-kit/wire";
 import type { DataRoot } from "./heronite/paths.js";
+import type { GameStats } from "./heronite/stats.js";
 
 import { statSync } from "node:fs";
 
@@ -22,6 +23,7 @@ import {
   findDataRoot,
   watchDirs,
 } from "./heronite/paths.js";
+import { readStats, statusLines } from "./heronite/stats.js";
 import { defineLibraryPluginWithUi } from "./kit/library-with-ui.js";
 
 const defaultedBoolean = (title: string, description: string) =>
@@ -94,6 +96,33 @@ const fileFound = (file: string): boolean => {
 
 const config = makeConfigService({ schema: HeroniteConfig });
 
+/**
+ * The read-only tab on one library entry. `load` answers `undefined` for entries that are not
+ * this plugin's, which is what the kit turns into "no tab"; `save` never writes to Heronite.
+ */
+const gameSection = (
+  configService: ConfigService<typeof HeroniteConfig>,
+): ServeUiGame<Schema.Top> => {
+  const loadStats = Effect.fnUntraced(function* (entryId: string) {
+    const cfg = yield* configService.load;
+    const root = resolveRoot(cfg);
+    return root === undefined ? undefined : readStats(root.root, entryId);
+  });
+
+  return {
+    schema: Schema.Struct({}),
+    load: (entryId) => loadStats(entryId).pipe(Effect.catch(() => Effect.succeed(undefined))),
+    save: () => Effect.void,
+    status: (entryId) =>
+      loadStats(entryId).pipe(
+        Effect.map((stats: GameStats | undefined) =>
+          stats === undefined ? [] : statusLines(stats),
+        ),
+        Effect.catch(() => Effect.succeed([] as readonly StatusLine[])),
+      ),
+  };
+};
+
 const pathsCommand: CliCommand<never> = {
   summary: "print the data root this plugin reads, which files exist and how much it scans",
   offline: true,
@@ -141,6 +170,7 @@ export const pluginDef = {
     ...configuredDir(cfg.dataDir),
     ...configuredDir(cfg.programDir),
   ],
+  game: gameSection,
   commands: { paths: pathsCommand },
 };
 
