@@ -5,6 +5,7 @@
       "release-type": "node",
       "package-name": "@rafifos/plugin-heronite",
       "bootstrap-sha": "d537e40e11ea99c23f02cba049cbaf46d52b1908",
+      "initial-version": "0.1.0",
       "changelog-sections": [
         { "type": "feat", "section": "Features" },
         { "type": "fix", "section": "Bug Fixes" },
