@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.2.0](https://github.com/rafifos/punktfunk-plugin-heronite/compare/v0.1.1...v0.2.0) (2026-11-25)
+
+
+### Features
+
+* **stream-prep:** log the audio plumbing with the display evidence ([a49fc14](https://github.com/rafifos/punktfunk-plugin-heronite/commit/a49fc14757a5009214f502ed2e59b541a7020b94))
+
+
+### Bug Fixes
+
+* **contrib:** stop the desk game when it is the title being streamed ([9be33f9](https://github.com/rafifos/punktfunk-plugin-heronite/commit/9be33f980840ebe37f0a17b816fce6278f3f9b3d))
+* report a failed parity snapshot write instead of dying ([b129e11](https://github.com/rafifos/punktfunk-plugin-heronite/commit/b129e11f2e5ff853bfc9ab817240144f35537566))
+* turn Wine's Wayland driver off for every game this plugin launches ([7ab826e](https://github.com/rafifos/punktfunk-plugin-heronite/commit/7ab826ecabb631d28064b1d0efa7ceabc5d5f43b))
+
+
+### Reverts
+
+* the manifest cannot turn Proton's Wayland driver off ([1dd639d](https://github.com/rafifos/punktfunk-plugin-heronite/commit/1dd639d6a2b7d152168f9972d2657c62dd7e0ef0))
+
 ## [0.1.1](https://github.com/rafifos/punktfunk-plugin-heronite/compare/v0.1.0...v0.1.1) (2026-11-25)
 
 
