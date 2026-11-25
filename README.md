@@ -4,8 +4,9 @@ A [Punktfunk](https://git.unom.io/unom/punktfunk) host plugin that will publish 
 [Heronite](https://heronite.app) games to the host's library and start them through Heronite, so
 Heronite's Wine/Proton setup, playtime and console mode apply.
 
-**Pre-release.** Games, launcher tiles, settings and downloads work; the per-game tab arrives in
-the coming milestone. See the [port plan](docs/port-plan.md) and the [ADRs](docs/adr/).
+**Pre-release.** Games, launcher tiles, settings, downloads and the per-game tab work; the docs and
+the first release are still coming. See the [port plan](docs/port-plan.md) and the
+[ADRs](docs/adr/).
 
 New to Punktfunk? [What is Punktfunk?](docs/punktfunk.md) covers the host/client model, how a
 stream flows, and where plugins fit.
@@ -54,6 +55,13 @@ rather than driving it. What it can show follows from what Heronite persists in
   missing succeeds only while Heronite reports it `downloading`, `queued` or `installing`; the
   host waits and then starts it. Anything else is refused with a sentence telling you to start the
   download in Heronite. Pause, cancel and remove always refuse, because Heronite owns the files.
+
+## Per-game tab
+
+Each of the plugin's entries opens a read-only tab: Heronite's own playtime and first/last played
+from `store/timestamp.json` and `local_library/sessions.json`, plus the completion status it
+resolved from `local_library/statuses.json`. The tab shows a short status list and an empty form —
+saving does nothing, because the plugin never writes to Heronite's files.
 
 ## History
 
