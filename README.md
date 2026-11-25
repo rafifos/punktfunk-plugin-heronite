@@ -170,6 +170,10 @@ and the npm package therefore always agree. `publish.yml` also takes a tag by ha
 (_Actions → Publish → Run workflow_) to re-run one that failed, and it is safe to re-run: a version
 already on the registry is a no-op.
 
+The plugin definition carries no version of its own: `pluginDef.version` reads `package.json`,
+which `bun build` inlines into `dist`. A release therefore reports the new version to the host with
+no second place to bump.
+
 Publishing needs one repository secret, `NPM_TOKEN`, an npm **Automation** token with write access to
 `@rafifos/plugin-heronite`. Provenance is signed through GitHub's OIDC identity, so the workflow asks
 for `id-token: write` and no extra setup. Once the first version exists, npm's trusted publishing can

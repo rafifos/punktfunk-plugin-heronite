@@ -308,6 +308,9 @@ code:
   `.github/workflows/publish.yml` refuses a tag that disagrees with `package.json`. The tarball also
   has to name `LICENSE-MIT`/`LICENSE-APACHE` explicitly: npm's automatic license include matches
   `LICENSE`/`LICENSE.md`, not the `-MIT` suffix.
+- **The version lives in one place.** `pluginDef.version` was a literal `"0.1.0"`, which
+  release-please cannot see; it now reads `package.json`, which `bun build` inlines into `dist`,
+  so the definition cannot drift from the tag.
 
 ## Known limitations
 

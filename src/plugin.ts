@@ -20,6 +20,7 @@ import { statSync } from "node:fs";
 import { handedPath, InstallRefused, makeConfigService } from "@punktfunk/plugin-kit";
 import { Effect, Schema } from "effect";
 
+import packageJson from "../package.json";
 import {
   downloadChanges,
   downloadRows,
@@ -270,7 +271,7 @@ export { HeroniteConfig, type HeroniteSettings, startRefusal };
 export const pluginDef = {
   name: PLUGIN_ID,
   title: "Heronite",
-  version: "0.1.0",
+  version: packageJson.version,
   configSchema: HeroniteConfig,
   detect: (cfg: HeroniteSettings) =>
     Effect.sync(() => dataRootPresent({ dataFolder: cfg.dataDir })),
