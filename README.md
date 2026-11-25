@@ -102,16 +102,20 @@ it happens:
 tail -20 ~/.local/state/punktfunk/stream-diagnostics.log
 ```
 
-A real capture from a gamescope session shows why that matters:
+A real capture from a gamescope session — this one **before** the setting below existed — shows why
+that matters:
 
 ```
 --- pid 272301 (steam): … steam://rungameid/3527290
     GAMESCOPE_WAYLAND_DISPLAY=gamescope-0
     PUNKTFUNK_GAMESCOPE_WSI=1          # our layer is live in this process
-    WAYLAND_DISPLAY=wayland-1          # …and this is the DESKTOP's compositor
+    WAYLAND_DISPLAY=wayland-1          # …and this is the DESKTOP's compositor: the broken case
     ENABLE_GAMESCOPE_WSI=0
     DISPLAY=:2
 ```
+
+With the setting in place that third line reads `WAYLAND_DISPLAY=` — empty, which is what puts the
+game on the session's compositor.
 
 Steam's runtime re-exposes the host session's Wayland socket inside the container, so a
 Wayland-capable client under it presents to KWin while the gamescope WSI layer is loaded — which is
