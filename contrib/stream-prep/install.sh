@@ -63,6 +63,9 @@ ours = [
         "timeout_s": 60,
     },
     {"on": "game.running", "run": capture, "timeout_s": 60},
+    # The same sample later, once Steam's Proton prefix and the game itself are up: `game.running`
+    # can fire a minute before the game owns a window, and the interesting processes appear later.
+    {"on": "game.running", "run": f"PUNKTFUNK_CAPTURE_DELAY=25 {capture}", "timeout_s": 60},
     {"on": "session.ended", "run": restore, "timeout_s": 60},
     {"on": "host.started", "run": restore, "timeout_s": 60},
 ]
@@ -74,7 +77,11 @@ except FileNotFoundError:
     config = {}
 
 owned = (prep, restore, capture)
-kept = [h for h in config.get("hooks", []) if not (isinstance(h, dict) and h.get("run") in owned)]
+kept = [
+    h
+    for h in config.get("hooks", [])
+    if not (isinstance(h, dict) and any(o in (h.get("run") or "") for o in owned))
+]
 config["hooks"] = kept + ours
 
 with open(path, "w") as f:

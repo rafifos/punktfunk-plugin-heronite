@@ -71,7 +71,8 @@ after an update is safe. `PLUGIN_REF=…` pins the ref it downloads from, and
 `HERONITE_PROGRAM_DIR=…` names the app folder if the AppImage is not in `~/Applications`. From a
 checkout, `contrib/stream-prep/install.sh` installs the files beside it instead of downloading.
 
-The same install adds a `game.running` hook that writes
+Two samples are taken (`game.running`, and again 25 s later, because `game.running` fires when the
+launcher's process appears — often a minute before Proton and the game exist). They write
 `~/.local/state/punktfunk/stream-diagnostics.log`: one block per launched game listing the Wine,
 Proton and session processes with their `DISPLAY`, `WAYLAND_DISPLAY`, `GAMESCOPE_WAYLAND_DISPLAY`
 and WSI variables. That is the difference between a game rendering inside the session and one that
@@ -82,6 +83,23 @@ it happens:
 ```sh
 tail -20 ~/.local/state/punktfunk/stream-diagnostics.log
 ```
+
+A real capture from a gamescope session shows why that matters:
+
+```
+--- pid 272301 (steam): … steam://rungameid/3527290
+    GAMESCOPE_WAYLAND_DISPLAY=gamescope-0
+    PUNKTFUNK_GAMESCOPE_WSI=1          # our layer is live in this process
+    WAYLAND_DISPLAY=wayland-1          # …and this is the DESKTOP's compositor
+    ENABLE_GAMESCOPE_WSI=0
+    DISPLAY=:2
+```
+
+Steam's runtime re-exposes the host session's Wayland socket inside the container, so a
+Wayland-capable client under it presents to KWin while the gamescope WSI layer is loaded — which is
+exactly when that layer reports `Creating swapchain for non-Gamescope swapchain`. Force the game onto
+X11 (`WAYLAND_DISPLAY= %command%` in its Steam launch options, or the same variable with an empty
+value in Heronite's per-game environment) if it happens to you.
 
 The prep stops only processes **without** `GAMESCOPE_WAYLAND_DISPLAY` in their environment, so the
 session's own Heronite and Steam are never touched, and a desk launch is skipped outright. It also
