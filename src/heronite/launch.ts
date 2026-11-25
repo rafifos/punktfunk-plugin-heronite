@@ -203,15 +203,15 @@ export function gameLaunch(transport: Transport, runner: string, appName: string
  * `icon` accepts: the host takes a token matching `[a-z][a-z0-9-]{0,31}` and every client resolves
  * it against the marks it bundles. Image bytes and URLs are rejected, and the host's art proxy
  * refuses SVG outright — it serves raster containers only, because the web console renders library
- * art in a browser and SVG is script-capable XML. So the two Heronite marks in Heronite's own
- * `packaging/icons/` cannot reach a tile from here, and serving them from the plugin is not open
- * either: it hosts no static directory, and its own assets are GPL-3.0 against this package's
- * MIT OR Apache-2.0 (ADR-0003).
+ * art in a browser and SVG is script-capable XML. So the Heronite mark in
+ * `assets/heronite-marks/` cannot reach a tile from here; it belongs in `assets/launcher-icons`,
+ * and this plugin needs no change once it lands there.
  *
- * No shipped client bundles either token yet, so both tiles fall back to their name on an accent
- * face — exactly what they rendered before — and light up unchanged the day `assets/launcher-icons`
- * gains them. The desktop mark stays `heronite` and console mode asks for `heronite-console`, so a
- * client that ships only the first still dresses one tile and leaves the other legible.
+ * Both tiles name the same mark because Heronite has one: the `H` its tray icons draw, in both
+ * themes. A second token would ask clients for art that does not exist.
+ *
+ * No shipped client bundles `heronite` yet, so both tiles fall back to their name on an accent
+ * face — exactly what they rendered before — and light up unchanged when the mark ships.
  */
 export function launcherTiles(
   transport: Transport,
@@ -236,7 +236,7 @@ export function launcherTiles(
       external_id: "console",
       title: "Heronite Console",
       role: "launcher",
-      icon: "heronite-console",
+      icon: "heronite",
       launch: console,
     });
   }
