@@ -43,9 +43,18 @@ request to that instance and exits in milliseconds. A streamed session's dedicat
 only as long as the launched command, so it is torn down and the client reconnects, while the game
 starts on the host's own screen. **Quit Heronite (or turn off Start with the system) before
 streaming**: the plugin then starts Heronite inside the streamed session, where it stays until the
-game ends. Let punktfunk own the compositor too: if your launch options wrap the game in another
-launcher's gamescope (goverlay, for example), use a profile without gamescope for streaming and
-keep only the overlay tools.
+game ends. Let punktfunk own the compositor **and** the layers: punktfunk ships its own gamescope and
+its matching FROG WSI Vulkan layer (`punktfunk-gamescope` installs both), and the host switches the
+distro's layer off for the session so exactly one compositor's layer is live. A game that starts
+outside that environment — a `steam://` hand-off to a Steam that was already running on the
+desktop, for example — loses it, and the live layer then reports `CreateSwapchainKHR: Creating
+swapchain for non-Gamescope swapchain` / `Hooking has failed somewhere! You may have a bad Vulkan
+layer interfering` for a window the compositor never owned. That dialog blocks the game before it
+creates a window, so the stream has nothing to show while the game appears on the host's own screen.
+**Quit Steam as well as Heronite before streaming**, so the session starts its own; if the dialog
+still appears, compare the game's environment — inside the session it carries
+`GAMESCOPE_WAYLAND_DISPLAY` and `PUNKTFUNK_GAMESCOPE_WSI=1`
+(`tr '\0' '\n' < /proc/<game pid>/environ`).
 
 A streamed game entry also waits for the game's **own window** before the client shows it. The host
 reports the game `running` as soon as its process is up, but holds its splash until the window
