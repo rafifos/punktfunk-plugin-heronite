@@ -36,10 +36,13 @@ const pausedFixture = join(import.meta.dir, "fixtures", "heronite-data-paused");
 
 const decode = (raw: unknown) => Effect.runPromise(Schema.decodeUnknownEffect(HeroniteConfig)(raw));
 
+/** A folder that exists and holds Heronite's binary, as an installed program folder would. */
+let programDir: string;
+
 /** The fixture's settings, with a configured program folder so launches use the headless form. */
 const settings = (overrides: Partial<HeroniteSettings> = {}): HeroniteSettings => ({
   dataDir: fixture,
-  programDir: join(tmpdir(), "heronite-no-such-program"),
+  programDir,
   showLauncherTile: true,
   showConsoleTile: true,
   ...overrides,
@@ -50,6 +53,9 @@ let previousConfigDir: string | undefined;
 
 beforeEach(() => {
   temp = mkdtempSync(join(tmpdir(), "heronite-plugin-"));
+  programDir = join(temp, "program");
+  mkdirSync(programDir, { recursive: true });
+  writeFileSync(join(programDir, "heronite-rs"), "");
   previousConfigDir = process.env.PUNKTFUNK_CONFIG_DIR;
   process.env.PUNKTFUNK_CONFIG_DIR = join(temp, "config");
 });
@@ -143,12 +149,21 @@ describe("settings wiring", () => {
     ).toHaveLength(0);
   });
 
-  test("the fixture tree's tiles are pinned in both transport cases", () => {
-    // A configured program folder is a known program: the window and the console tile.
+  test("the fixture tree's tiles follow the transport", () => {
+    // A configured program folder holding heronite-rs: the window and the console tile.
     expect(pluginDef.launchers(settings()).map((tile) => tile.external_id)).toEqual([
       "launcher",
       "console",
     ]);
+
+    // A folder with no program in it is a misconfiguration: fall through to the fallback, which
+    // has no console tile. Publishing heronite-rs from a folder that does not hold it would give
+    // the host a command that cannot run.
+    const emptyFolder = join(temp, "no-program-here");
+    mkdirSync(emptyFolder, { recursive: true });
+    expect(
+      pluginDef.launchers(settings({ programDir: emptyFolder })).map((tile) => tile.external_id),
+    ).toEqual(["launcher"]);
 
     // No program folder and no heronite-rs on PATH: the protocol fallback has no console tile.
     const path = process.env.PATH;
@@ -161,6 +176,18 @@ describe("settings wiring", () => {
       if (path === undefined) delete process.env.PATH;
       else process.env.PATH = path;
     }
+  });
+
+  test("an AppImage in the program folder is a program the tiles can run", () => {
+    const appimageDir = join(temp, "applications");
+    mkdirSync(appimageDir, { recursive: true });
+    writeFileSync(join(appimageDir, "Heronite-x86_64.appimage"), "");
+    const appimage = join(appimageDir, "Heronite-x86_64.appimage");
+
+    const tiles = pluginDef.launchers(settings({ programDir: appimageDir }));
+
+    expect(tiles.map((tile) => tile.launch?.value)).toEqual(["window-program", "console-program"]);
+    expect(tiles[0]?.launch?.args).toEqual([{ name: "program", value: appimage }]);
   });
 });
 

@@ -3,7 +3,7 @@
 
 import type { ProviderEntry } from "@punktfunk/plugin-kit/wire";
 
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 
 import { pathApi } from "./paths.js";
 import { nonEmpty } from "./text.js";
@@ -12,6 +12,9 @@ const PROGRAM_NAME = "heronite-rs";
 
 /** Portable and Windows copies ship the binary under one of these names. */
 const PROGRAM_CANDIDATES = ["heronite-rs", "heronite-rs.exe", "heronite.exe"];
+
+/** Heronite's Linux AppImage is a program too: it answers the same CLI and needs no unpacking. */
+const APPIMAGE = /\.appimage$/i;
 
 /** The host caps an exec-template parameter at 128 characters. */
 const MAX_PROTOCOL_BYTES = 128;
@@ -22,7 +25,17 @@ interface LaunchEnvironment {
   readonly platform?: NodeJS.Platform;
   readonly onPath?: (command: string) => boolean;
   readonly exists?: (file: string) => boolean;
+  readonly list?: (dir: string) => readonly string[];
 }
+
+/** A folder that cannot be read lists as empty, exactly like one with no program in it. */
+const listDir = (dir: string): readonly string[] => {
+  try {
+    return readdirSync(dir);
+  } catch {
+    return [];
+  }
+};
 
 /** The tile switches; the tiles read nothing else. */
 interface LauncherTileSettings {
@@ -59,14 +72,29 @@ function onPath(
     .some((dir) => names.some((name) => exists(api.join(dir, name))));
 }
 
+/**
+ * The program a configured folder names. The binary first, then Heronite's AppImage: an AppImage
+ * install ships no `heronite-rs` beside it, and it is a long-lived program that answers the same
+ * CLI, which is what a dedicated display needs. `undefined` when the folder holds neither, so the
+ * caller can fall through rather than hand the host a path that does not exist.
+ */
 function resolveProgram(
   folder: string,
   platform: NodeJS.Platform,
   exists: (file: string) => boolean,
-): string {
+  list: (dir: string) => readonly string[],
+): string | undefined {
   const api = pathApi(platform);
-  const candidates = PROGRAM_CANDIDATES.map((name) => api.join(folder, name));
-  return candidates.find((candidate) => exists(candidate)) ?? candidates[0] ?? folder;
+  const binary = PROGRAM_CANDIDATES.map((name) => api.join(folder, name)).find((candidate) =>
+    exists(candidate),
+  );
+  if (binary !== undefined) return binary;
+
+  const appimages = list(folder)
+    .filter((name) => APPIMAGE.test(name) && /heronite/i.test(name))
+    .sort((a, b) => a.localeCompare(b))
+    .map((name) => api.join(folder, name));
+  return appimages.find((candidate) => exists(candidate));
 }
 
 function exec(value: string, args?: readonly { readonly name: string; readonly value: string }[]) {
@@ -113,8 +141,9 @@ function consoleLaunch(transport: Transport) {
 }
 
 /**
- * Picks the launch transport: a `heronite-rs` on PATH, then the configured program folder, then a
- * Flatpak data root, then the protocol URL through the platform's opener.
+ * Picks the launch transport: a `heronite-rs` on PATH, then the configured program folder (its
+ * binary or Heronite's AppImage), then a Flatpak data root, then the protocol URL through the
+ * platform's opener.
  */
 export function chooseTransport(
   settings: LaunchSettings = {},
@@ -122,13 +151,17 @@ export function chooseTransport(
 ): Transport {
   const platform = environment.platform ?? process.platform;
   const exists = environment.exists ?? existsSync;
+  const list = environment.list ?? listDir;
   const lookup = environment.onPath ?? ((command: string) => onPath(command, platform, exists));
 
   if (lookup(PROGRAM_NAME)) return { kind: "run" };
 
   const programFolder = nonEmpty(settings.programFolder);
   if (programFolder !== undefined) {
-    return { kind: "run-program", program: resolveProgram(programFolder, platform, exists) };
+    const program = resolveProgram(programFolder, platform, exists, list);
+    // A folder with no program in it is a misconfiguration, not an install: fall through rather
+    // than publish commands that cannot run.
+    if (program !== undefined) return { kind: "run-program", program };
   }
 
   if (settings.flatpak === true) return { kind: "run-flatpak" };

@@ -92,6 +92,17 @@ describe("cli", () => {
     expect(lines).toContain("launchers: 1");
   });
 
+  test("paths names the transport and warns when it is the protocol fallback", () => {
+    // A launch that hands off to the heronite:// handler cannot hold a dedicated display: the
+    // handler may not be registered at all, and xdg-open exits before the game appears.
+    const lines = run("paths").stdout.trimEnd().split("\n");
+
+    expect(lines).toContain("transport: open");
+    expect(lines.some((line) => line.startsWith("warning: ") && line.includes("heronite://"))).toBe(
+      true,
+    );
+  });
+
   test("with no data root, detect is absent and paths says so", () => {
     dataHome = join(temp, "empty");
 

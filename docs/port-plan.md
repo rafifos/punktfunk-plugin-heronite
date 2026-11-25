@@ -270,6 +270,16 @@ code:
   scan produced the installed Steam and sideload entries with art and detect hints. A future
   Heronite release that changes a file is handled by updating `model.ts` and the fixtures
   (ADR-0003).
+- **An AppImage is a program.** A program folder may hold Heronite's AppImage rather than
+  `heronite-rs`; it answers the same CLI and is the long-lived process a dedicated display needs.
+  A folder holding neither now falls through to the next transport instead of naming a path that
+  does not exist (the earlier behaviour, which only surfaced once a real AppImage install was
+  tried). The `paths` verb prints the chosen transport and warns on the protocol fallback.
+- **The fallback is not a streamable transport on a dedicated display.** A hand-off command
+  (`xdg-open heronite://…`) exits as soon as the handler is dispatched, and a dedicated display's
+  lifetime is the launched command, so the display is torn down and the client reconnects. The
+  plan's transport table keeps the fallback as the last resort for a host that streams its live
+  desktop; streamed sessions need one of the three program transports.
 
 ## Known limitations
 

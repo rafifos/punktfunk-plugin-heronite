@@ -64,10 +64,43 @@ describe("chooseTransport", () => {
     });
   });
 
-  test("an unverifiable configured folder still names heronite-rs", () => {
+  test("an unverifiable configured folder falls through instead of naming a missing program", () => {
     expect(chooseTransport({ programFolder: "/opt/heronite" }, linux)).toEqual({
+      kind: "open",
+      template: "open",
+    });
+    expect(chooseTransport({ programFolder: "/opt/heronite", flatpak: true }, linux)).toEqual({
+      kind: "run-flatpak",
+    });
+  });
+
+  test("a program folder holding the AppImage uses it", () => {
+    // Heronite's AppImage ships no `heronite-rs` next to it, and it answers the same CLI, so the
+    // folder that holds it is a program folder like any other.
+    const folder = "/home/deck/Applications";
+    const appimage: LaunchEnvironment = {
+      platform: "linux",
+      onPath: () => false,
+      exists: (file) => file === `${folder}/Heronite-x86_64.appimage`,
+      list: () => ["Heronite-x86_64.appimage", "notes.txt"],
+    };
+    expect(chooseTransport({ programFolder: folder }, appimage)).toEqual({
       kind: "run-program",
-      program: "/opt/heronite/heronite-rs",
+      program: `${folder}/Heronite-x86_64.appimage`,
+    });
+  });
+
+  test("the AppImage is matched case-insensitively and heronite-rs still wins", () => {
+    const folder = "/opt/heronite";
+    const both: LaunchEnvironment = {
+      platform: "linux",
+      onPath: () => false,
+      exists: () => true,
+      list: () => ["Heronite.AppImage"],
+    };
+    expect(chooseTransport({ programFolder: folder }, both)).toEqual({
+      kind: "run-program",
+      program: `${folder}/heronite-rs`,
     });
   });
 
@@ -212,6 +245,18 @@ describe("launcherTiles", () => {
         },
       },
     ]);
+  });
+
+  test("an AppImage in the program folder is what both tiles run", () => {
+    const tiles = launcherTiles({
+      kind: "run-program",
+      program: "/home/deck/Applications/Heronite-x86_64.appimage",
+    });
+    const arg = [{ name: "program", value: "/home/deck/Applications/Heronite-x86_64.appimage" }];
+
+    expect(tiles.map((tile) => tile.launch?.value)).toEqual(["window-program", "console-program"]);
+    expect(tiles[0]?.launch?.args).toEqual(arg);
+    expect(tiles[1]?.launch?.args).toEqual(arg);
   });
 
   test("a Flatpak install uses the Flatpak templates", () => {

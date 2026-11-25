@@ -27,10 +27,21 @@ runner. A copy group you linked in Heronite appears once, as the first installed
 
 ## Setup
 
-**Linux package (deb, rpm, Arch) or AppImage:** nothing to set. Heronite's data in
-`~/.local/share/heronite` is found by itself, and launches use `heronite-rs` when it is on `PATH`.
-Without it, the plugin opens the `heronite://launch` link instead, so a desktop entry that handles
-`heronite://` must exist — the package installs one.
+**Linux package (deb, rpm, Arch):** nothing to set. Heronite's data in
+`~/.local/share/heronite` is found by itself, and launches use `heronite-rs` from `PATH`.
+
+**AppImage:** set **Heronite program folder** to the folder holding the AppImage, usually
+`~/Applications`. The plugin runs the AppImage with Heronite's own flags, which keeps one
+long-lived process the host can follow — what a streamed session needs. Do not rely on the
+`heronite://` scheme instead: an AppImage integration often registers no handler, and a hand-off
+launch through `xdg-open` exits before anything appears. The `paths` verb prints which transport
+is in use and warns on the fallback.
+
+**Streaming:** the protocol fallback starts Heronite on the host's own screen. A client that asks
+for its own mode makes the host spin up a dedicated display whose lifetime is the launched
+command; a hand-off command exits at once, so the display goes away and the client reconnects.
+Give the plugin a program — `heronite-rs` on `PATH`, the program folder, or Flatpak — before
+streaming Heronite titles.
 
 **Flatpak:** nothing to set. The Flatpak's data folder
 (`~/.var/app/app.heronite.Heronite/data/heronite`) is found by itself, and launches go through

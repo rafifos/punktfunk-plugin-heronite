@@ -11,6 +11,7 @@ import type {
 } from "@punktfunk/plugin-kit";
 import type { LibraryInstall } from "@punktfunk/plugin-kit/library";
 import type { ProviderEntry } from "@punktfunk/plugin-kit/wire";
+import type { Transport } from "./heronite/launch.js";
 import type { DataRoot } from "./heronite/paths.js";
 import type { GameStats } from "./heronite/stats.js";
 
@@ -106,6 +107,21 @@ const fileFound = (file: string): boolean => {
     return false;
   }
 };
+
+/** What the operator sees for the chosen transport, and why the fallback needs a warning. */
+function transportLines(transport: Transport): readonly string[] {
+  const named =
+    transport.kind === "run-program"
+      ? `transport: run-program (${transport.program})`
+      : `transport: ${transport.kind}`;
+  if (transport.kind !== "open") return [named];
+  return [
+    named,
+    "warning: launches go through the heronite:// handler, which this plugin cannot verify is " +
+      "registered — without it xdg-open opens nothing, and a hand-off launch cannot hold a " +
+      "dedicated display. Set the Heronite program folder (heronite-rs or Heronite-*.AppImage).",
+  ];
+}
 
 /** One sentence the host shows when Heronite, not this plugin, owns the download. */
 const REFUSED = {
@@ -234,6 +250,7 @@ const pathsCommand: CliCommand<never> = {
         for (const file of Object.values(dataPaths(root.root))) {
           console.log(`  ${fileFound(file) ? "found" : "missing"} ${file}`);
         }
+        for (const line of transportLines(transportFor(cfg, root))) console.log(line);
       }
 
       console.log(`entries: ${scanNow(cfg).length}`);

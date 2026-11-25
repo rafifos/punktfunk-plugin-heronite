@@ -38,7 +38,10 @@ plugin before installing this one so both do not list the same library.
 - Only remote art is used; art Heronite keeps in `localart:` files is skipped.
 - Only copy groups you made by hand are collapsed, not Heronite's automatic twins.
 - The protocol fallback (no `heronite-rs` on `PATH` and no program folder) drops any title whose
-  encoded launch URL exceeds the host's 128-character parameter cap.
+  encoded launch URL exceeds the host's 128-character parameter cap. It also cannot hold a
+  dedicated display: it needs a registered `heronite://` handler, and `xdg-open` exits before a
+  game appears, so a streamed session should use `heronite-rs`, a program folder (an AppImage is
+  accepted) or Flatpak.
 
 ## Install
 
