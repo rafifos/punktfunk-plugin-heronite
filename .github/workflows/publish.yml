@@ -1,0 +1,81 @@
+name: Publish
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Tag to publish, such as v0.1.0
+        required: true
+        type: string
+    secrets:
+      npm-token:
+        required: false
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Tag to publish, such as v0.1.0
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  npm:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # npm provenance: the attestation is signed with the workflow's OIDC identity.
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install
+        run: bun install --frozen-lockfile
+
+      - name: Build
+        run: bun run build
+
+      - name: The tag must be the version being published
+        env:
+          REF: ${{ inputs.ref }}
+        run: |
+          tag="${REF#v}"
+          version="$(node -p "require('./package.json').version")"
+          if [ "$tag" != "$version" ]; then
+            echo "::error::tag $REF does not match package.json $version"
+            exit 1
+          fi
+
+      - name: Skip a version that is already on the registry
+        id: check
+        env:
+          REF: ${{ inputs.ref }}
+          NODE_AUTH_TOKEN: ${{ secrets.npm-token }}
+        run: |
+          name="$(node -p "require('./package.json').name")"
+          if npm view "$name@${REF#v}" version >/dev/null 2>&1; then
+            echo "::notice::$name@${REF#v} is already published"
+            echo "publish=false" >>"$GITHUB_OUTPUT"
+          else
+            echo "publish=true" >>"$GITHUB_OUTPUT"
+          fi
+
+      # An empty NODE_AUTH_TOKEN is left out of the request, which is what npm's trusted
+      # publishing needs; a token secret keeps the first, unattended publish working before
+      # that binding exists on the registry.
+      - name: Publish
+        if: steps.check.outputs.publish == 'true'
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.npm-token }}
