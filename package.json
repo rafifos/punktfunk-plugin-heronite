@@ -1,6 +1,6 @@
 {
   "name": "@rafifos/plugin-heronite",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": false,
   "type": "module",
   "description": "Punktfunk plugin: publishes Heronite's games to the host's library and starts them through Heronite.",

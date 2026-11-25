@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/rafifos/punktfunk-plugin-heronite/compare/v0.1.0...v0.1.1) (2026-11-25)
+
+
+### Bug Fixes
+
+* **ci:** read the version out of a component-prefixed release tag ([92aca25](https://github.com/rafifos/punktfunk-plugin-heronite/commit/92aca255f535bc19bc8f6cb8e1059b8d28a70a19))
+
 ## 0.1.0 (2026-11-25)
 
 
