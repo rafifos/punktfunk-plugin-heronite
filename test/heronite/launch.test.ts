@@ -211,12 +211,14 @@ describe("launcherTiles", () => {
         external_id: "launcher",
         title: "Heronite",
         role: "launcher",
+        icon: "heronite",
         launch: { kind: "exec", value: "window" },
       },
       {
         external_id: "console",
         title: "Heronite Console",
         role: "launcher",
+        icon: "heronite-console",
         launch: { kind: "exec", value: "console" },
       },
     ]);
@@ -228,6 +230,7 @@ describe("launcherTiles", () => {
         external_id: "launcher",
         title: "Heronite",
         role: "launcher",
+        icon: "heronite",
         launch: {
           kind: "exec",
           value: "window-program",
@@ -238,6 +241,7 @@ describe("launcherTiles", () => {
         external_id: "console",
         title: "Heronite Console",
         role: "launcher",
+        icon: "heronite-console",
         launch: {
           kind: "exec",
           value: "console-program",
@@ -265,12 +269,14 @@ describe("launcherTiles", () => {
         external_id: "launcher",
         title: "Heronite",
         role: "launcher",
+        icon: "heronite",
         launch: { kind: "exec", value: "window-flatpak" },
       },
       {
         external_id: "console",
         title: "Heronite Console",
         role: "launcher",
+        icon: "heronite-console",
         launch: { kind: "exec", value: "console-flatpak" },
       },
     ]);
@@ -284,6 +290,7 @@ describe("launcherTiles", () => {
       external_id: "launcher",
       title: "Heronite",
       role: "launcher",
+      icon: "heronite",
       launch: {
         kind: "exec",
         value: "open",
@@ -300,15 +307,19 @@ describe("launcherTiles", () => {
     });
   });
 
-  test("both tiles are toggleable and never carry an icon", () => {
+  test("both tiles are toggleable and keep their own mark", () => {
     expect(launcherTiles({ kind: "run" }, { showLauncherTile: false })).toHaveLength(1);
     expect(launcherTiles({ kind: "run" }, { showConsoleTile: false })).toHaveLength(1);
     expect(
       launcherTiles({ kind: "run" }, { showLauncherTile: false, showConsoleTile: false }),
     ).toEqual([]);
 
-    for (const tile of launcherTiles({ kind: "run" })) {
-      expect(tile).not.toHaveProperty("icon");
+    // The tokens, not art: `icon` takes a mark name a client resolves against the art it bundles.
+    // Both must stay within the host's `[a-z][a-z0-9-]{0,31}` rule or reconcile rejects the entry.
+    const tiles = launcherTiles({ kind: "run" });
+    expect(tiles.map((tile) => tile.icon)).toEqual(["heronite", "heronite-console"]);
+    for (const tile of tiles) {
+      expect(tile.icon).toMatch(/^[a-z][a-z0-9-]{0,31}$/);
     }
   });
 });

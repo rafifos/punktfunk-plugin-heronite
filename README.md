@@ -25,6 +25,22 @@ Needs Heronite 1.8 and host 0.43 or later. An older host lists the games and ign
 Left out: games only in a store's catalogue, hidden games, DLCs, browser titles, and the `zoom`
 runner. A copy group you linked in Heronite appears once, as the first installed copy.
 
+### The two launcher tiles' marks
+
+Both tiles name a brand-mark token — `heronite` for the desktop tile, `heronite-console` for console
+mode — and that is the only thing the host accepts there. `icon` is a token matching
+`[a-z][a-z0-9-]{0,31}` that each client resolves against the marks it bundles; image bytes and URLs
+are rejected, so a plugin cannot ship its own artwork. The art slots are not a way round it either:
+the host's art proxy serves raster containers only and **refuses SVG outright**, because the web
+console renders library art in a browser and SVG is script-capable XML. On top of that this plugin
+serves no static directory to host a raster copy, and Heronite's own marks are GPL-3.0 against this
+package's MIT OR Apache-2.0 (ADR-0003), so they cannot be vendored here.
+
+No shipped client bundles either token yet, so both tiles render as their name on an accent face —
+unchanged from before this was added. They light up, with no release here, the day punktfunk's
+`assets/launcher-icons` gains the marks. Asking for two different tokens means a client that ships
+only `heronite` still dresses the desktop tile and leaves console mode legible rather than wrong.
+
 ## Setup
 
 **Linux package (deb, rpm, Arch):** nothing to set. Heronite's data in
