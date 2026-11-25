@@ -314,13 +314,11 @@ code:
 - **Release options are root-level.** `bootstrap-sha`, `initial-version` and `changelog-sections`
   only exist on the manifest's root; inside a package entry release-please silently ignores them,
   which is how the first changelog draft reached the Hydra-era root commit and proposed 1.0.0.
-- **Release tags carry the component.** Release Please names a package tag
-  `<component>-v<version>`, so the first release is `plugin-heronite-v0.1.0`. `publish.yml`
-  reads the version from the end of the tag rather than stripping a leading `v`, which keeps
-  both shapes working; `include-component-in-tag` stays at its default, because turning it off
-  after the fact points release-please at a `v0.1.0` tag that does not exist.
-
-## Known limitations
+- **Release tags are plain `v<version>`.** Release Please's default is
+  `<component>-v<version>`, which the first release produced as `plugin-heronite-v0.1.0`; the
+  tag and its GitHub release were replaced with `v0.1.0` on the same commit and
+  `include-component-in-tag` is off from here on. `publish.yml` reads the version from the end
+  of the tag, so either shape parses.
 
 - No download percentage, speed or ETA, and no way to tell whether Heronite is running.
 - A download interrupted by killing Heronite stays `downloading` until Heronite writes the file.
