@@ -156,6 +156,8 @@ the only place that talks to Punktfunk: it composes the kit's exported pieces be
 `defineLibraryPlugin` owns the only `serveUi` call and so cannot serve a per-game tab. That is why
 `@punktfunk/plugin-kit` is pinned to an exact version.
 
+Why the decode layer stays Effect-free and how its IO is injected: [ADR 0007](docs/adr/0007-pure-decode-layer-injected-io.md).
+
 ## Releasing
 
 [release-please](https://github.com/googleapis/release-please) owns the version, the changelog and the
