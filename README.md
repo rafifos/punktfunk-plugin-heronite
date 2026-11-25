@@ -36,7 +36,7 @@ is script-capable XML).
 
 So the art itself belongs to the clients, not to a plugin. Heronite's mark — its `H`, the same one
 its tray icons draw — is kept in [assets/heronite-marks](assets/heronite-marks) as the master for
-that set, under its own GPL-3.0 terms and outside the published package. No shipped client bundles
+that set, with its provenance recorded there and outside the published package. No shipped client bundles
 `heronite` yet, so both tiles render as their name on an accent face — unchanged from before this
 was added — and they light up, with no release here, once `assets/launcher-icons` gains the mark.
 

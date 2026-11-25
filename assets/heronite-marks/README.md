@@ -8,7 +8,6 @@ mark its tray icons draw.
 | `graphite.svg`        | Heronite's full application icon, verbatim from `packaging/icons`   |
 | `graphite-small.svg`  | Heronite's small application icon, verbatim                         |
 | `heronite.svg`        | The mark: the `H` from `graphite-small.svg`, as `currentColor`      |
-| `LICENSE-GPL-3.0.txt` | The licence the four files above are under                          |
 
 Heronite's tray folder (`app/assets/tray`) holds the same `H` as `icon-dark.png` and
 `icon-light.png`, but only as 64 px rasters, in two colours. `heronite.svg` is that mark as vector:
@@ -44,32 +43,25 @@ that ship the mark and keep falling back to the tile name on those that do not.
 These files are not in the published package — `files` in `package.json` lists only `dist` and the
 two code licences.
 
-## Licence
+## Provenance, and no licence claimed here
 
-The marks are **GNU GPL v3.0**, © Rafael Goulart B, kept separate from this package's
-MIT OR Apache-2.0 code. The full text is beside them in `LICENSE-GPL-3.0.txt`.
+The marks are Heronite's, © Rafael Goulart B — the application icons and the tray art they come from:
 
-- Source: <https://github.com/RafaelGoulartB/Heronite> — `packaging/icons` and `app/assets/tray`
-- Licence: GNU General Public License v3.0 — <https://www.gnu.org/licenses/gpl-3.0.html>
+- <https://github.com/RafaelGoulartB/Heronite> — `packaging/icons`, `app/assets/tray`
 
-GPL-3.0 settles what these files' terms are. Heronite's repository is GPL-3.0, its `licenses/`
-folder only records third-party components (the CC BY 3.0 entry there is Zacksly's controller
-drawings, not these), and no icon-specific licence existed — so this states the repository's own
-default rather than changing it.
+This file deliberately states no licence. The terms are the Heronite project's to set, and a file
+here cannot grant what it does not hold: restating a licence that the project has not chosen would
+be a claim, not a grant. Nothing in this repository publishes them either — neither the art nor this
+README is in the npm tarball, and no build step compiles the SVGs into `dist`.
 
-### Before step 1 above, the licence has to change again
+**What that means for step 1 above.** Before the mark goes into punktfunk it needs explicit,
+permissive terms, because the destination is where an unstated licence stops being harmless:
+punktfunk and its clients are MIT OR Apache-2.0, every mark already in
+`assets/launcher-icons/LICENSES` is permissive (Simple Icons CC0, Font Awesome CC BY 4.0, Playnite
+and Hydra MIT), and `gen-launcher-icons.sh` compiles each mark into the GTK, Windows and Apple
+clients and inlines its path data into three more. A copyleft or unstated mark would be built into
+binaries shipped under a permissive licence.
 
-The destination is permissive, and this is the one place it matters: punktfunk and its clients are
-MIT OR Apache-2.0, and every mark already in `assets/launcher-icons/LICENSES` is permissive —
-Simple Icons CC0, Font Awesome CC BY 4.0, Playnite and Hydra MIT. Those marks do not stay separate
-files at build time: `gen-launcher-icons.sh` bakes each one into the GTK, Windows and Apple clients
-and inlines its path data into three more, so a copyleft mark would be compiled into binaries
-shipped under a permissive licence.
-
-That is the case copyleft is designed to catch, and it would make the mark unusable upstream. The
-copy in this repository is unaffected: these files are neither compiled into `dist` nor published.
-
-The copyright holder can settle it in one sentence, and the permissive choices already have
-precedent in that folder: **CC0 1.0** (no conditions, like Simple Icons) or **CC BY 4.0**
-(attribution only, like Font Awesome). Either replaces GPL-3.0 for these four files and unblocks the
-contribution; nothing else about them changes.
+The permissive choices already have precedent in that folder: **CC0 1.0** (no conditions, like
+Simple Icons) or **CC BY 4.0** (attribution only, like Font Awesome). Either is a one-line statement
+by the copyright holder and unblocks the contribution; nothing about the files themselves changes.
