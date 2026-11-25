@@ -110,6 +110,18 @@ empty value still enables the Wayland driver. HDR is unaffected either way — t
 from the gamescope WSI layer over X11 (`--hdr-enabled`, `PUNKTFUNK_GAMESCOPE_WSI=1`, `DXVK_HDR=1`),
 none of which reads `WAYLAND_DISPLAY`.
 
+A hook cannot do this for you — it is a separate process, and a child's environment is fixed when the
+host forks it — so the choice is where the variable is set:
+
+| Where                                                                                                         | Scope                                   | Notes                                                                                                                                                                                                                        |
+| ------------------------------------------------------------------------------------------------------------- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Steam launch options (`env -u WAYLAND_DISPLAY %command%`)                                                     | one game                                | zero risk, what the line above does                                                                                                                                                                                          |
+| `PROTON_ENABLE_WAYLAND=0` exported once for the session (user manager, or `systemctl --user set-environment`) | every Proton title, streams and desktop | `check_environment` _discards_ the feature on `0`, so this wins over `WAYLAND_DISPLAY` being present; it also reaches the game through Steam's runtime, which re-adds `WAYLAND_DISPLAY` but passes unknown variables through |
+| Nothing — leave `WAYLAND_DISPLAY` alone and set the variable on the launcher the plugin starts                | plugin-level                            | needs `exe: "env"` in the manifest, since `ExecTemplate` has no `env` field                                                                                                                                                  |
+
+The diagnostics log records `PROTON_ENABLE_WAYLAND`, `PROTON_USE_WAYLAND` and `SDL_VIDEODRIVER` for
+every game process, so whichever route you pick, the log says whether it arrived.
+
 The prep stops only processes **without** `GAMESCOPE_WAYLAND_DISPLAY` in their environment, so the
 session's own Heronite and Steam are never touched, and a desk launch is skipped outright. It also
 leaves everything alone when a Steam game is running at the desk — killing an unsaved session is worse

@@ -39,7 +39,7 @@ mkdir -p "$(dirname "$out")"
         found=1
         echo "--- pid $p ($comm): $(tr '\0' ' ' <"$dir/cmdline" 2>/dev/null | cut -c1-100)"
         tr '\0' '\n' <"$dir/environ" 2>/dev/null |
-            grep -E '^(DISPLAY|WAYLAND_DISPLAY|GAMESCOPE_WAYLAND_DISPLAY|ENABLE_GAMESCOPE_WSI|PUNKTFUNK_GAMESCOPE_WSI|DXVK_HDR)=' |
+            grep -E '^(DISPLAY|WAYLAND_DISPLAY|GAMESCOPE_WAYLAND_DISPLAY|ENABLE_GAMESCOPE_WSI|PUNKTFUNK_GAMESCOPE_WSI|DXVK_HDR|PROTON_ENABLE_WAYLAND|PROTON_USE_WAYLAND|SDL_VIDEODRIVER)=' |
             sed 's/^/    /' || echo "    (display env unreadable)"
     done
     [ "$found" = 0 ] && echo "--- no game process found yet"
