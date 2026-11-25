@@ -1,31 +1,30 @@
 // Heronite writes atomically (temp file + rename) and never leaves a half-written document, but
-// a reader can still hit a file mid-replace, so every read gets one retry. A malformed file is
-// absent, never an empty library: a valid `{}` or `[]` is what an empty document looks like.
+// a reader can still hit a file mid-replace, so every read gets one retry. A malformed or
+// schema-rejecting file is absent, never an empty library: a valid `{}` or `[]` is what an empty
+// document looks like.
 
 import { readFileSync } from "node:fs";
+
+import { Option, Schema } from "effect";
 
 /** Reads a file's text; injectable so the retry can be tested without racing the filesystem. */
 type JsonReader = (file: string) => string;
 
 const readUtf8: JsonReader = (file) => readFileSync(file, "utf8");
 
-function parse<T>(text: string): { readonly value: T | undefined } | undefined {
-  if (text.trim() === "") return { value: undefined };
-
-  try {
-    const value: unknown = JSON.parse(text);
-    return { value: value === null ? undefined : (value as T) };
-  } catch {
-    return undefined;
-  }
-}
-
 /**
- * Reads one JSON file tolerantly. A missing, unreadable, empty, `null` or malformed file yields
- * `undefined`; a parsed document is returned as-is, so `{}` and `[]` stay distinguishable from
- * absence.
+ * Reads one JSON file and decodes it with `schema`. A missing, unreadable, empty, `null`,
+ * malformed or schema-rejecting file yields `undefined`, so a caller never sees a document it
+ * would have to re-check by hand.
  */
-export function readJson<T>(file: string, reader: JsonReader = readUtf8): T | undefined {
+export function readJson<A>(
+  file: string,
+  schema: Schema.Schema<A>,
+  reader: JsonReader = readUtf8,
+): A | undefined {
+  // `decodeUnknownOption` asks for a decoder whose requirements are `never`; a bare `Schema<A>`
+  // leaves them `unknown`. These schemas declare no services, so the bridge is sound.
+  const decoder = schema as unknown as Schema.ConstraintDecoder<unknown>;
   for (let attempt = 0; attempt < 2; attempt += 1) {
     let text: string;
     try {
@@ -34,18 +33,20 @@ export function readJson<T>(file: string, reader: JsonReader = readUtf8): T | un
       continue;
     }
 
-    const parsed = parse<T>(text);
-    if (parsed !== undefined) return parsed.value;
+    // An empty file is Heronite's absent document, not a reader that lost a race.
+    if (text.trim() === "") return undefined;
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      continue;
+    }
+    if (parsed === null) return undefined;
+
+    return Option.getOrUndefined(Schema.decodeUnknownOption(decoder)(parsed)) as A | undefined;
   }
   return undefined;
-}
-
-/**
- * The electron-store-named helper for Heronite's tab-indented files. Indentation is just JSON
- * whitespace, so it delegates to {@link readJson}.
- */
-export function readStore<T>(file: string, reader: JsonReader = readUtf8): T | undefined {
-  return readJson<T>(file, reader);
 }
 
 export type { JsonReader };

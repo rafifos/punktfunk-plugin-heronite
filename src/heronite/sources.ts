@@ -3,28 +3,17 @@
 // id-only join and the install answer. Files are never inspected (ADR-0006).
 
 import type {
-  AmazonLibraryFile,
-  ArtFile,
   CollectionArt,
   CollectionMetadata,
   CompletionStatus,
   CopiesFile,
   DownloadElement,
   DownloadManagerFile,
-  EmulatorsFile,
-  EpicLibraryFile,
   GameInfo,
   GameInstall,
-  GogInstalledFile,
   GogInstalledGame,
-  GogLibraryFile,
   LocalGameMeta,
   LocalGameSession,
-  LocalLibraryFile,
-  MetadataFile,
-  SessionsFile,
-  SideloadLibraryFile,
-  StatusesFile,
   SteamLibraryFile,
   StoreConfigFile,
   TimestampFile,
@@ -32,8 +21,26 @@ import type {
 } from "./model.js";
 
 import { entryId, STORE_RUNNERS } from "./identity.js";
-import { readStore } from "./json.js";
+import { readJson } from "./json.js";
 import { dataPaths } from "./paths.js";
+import {
+  AmazonLibrary,
+  Art,
+  Copies,
+  DownloadManager,
+  Emulators,
+  EpicLibrary,
+  GogInstalled,
+  GogLibrary,
+  LocalLibrary,
+  Metadata,
+  Sessions,
+  SideloadLibrary,
+  Statuses,
+  SteamLibrary,
+  StoreConfig,
+  Timestamp,
+} from "./schemas.js";
 import { nonEmpty } from "./text.js";
 
 /** One game as a store source lists it, after the GOG install record is folded in. */
@@ -103,33 +110,31 @@ export function installedIds(steam: SteamLibraryFile | undefined): ReadonlySet<s
 /** Reads one data root. A missing or malformed file contributes nothing, never emptiness. */
 export function readSources(root: string): HeroniteSources {
   const paths = dataPaths(root);
-  const epic = readStore<EpicLibraryFile>(paths.epicLibrary);
-  const gog = readStore<GogLibraryFile>(paths.gogLibrary);
-  const amazon = readStore<AmazonLibraryFile>(paths.amazonLibrary);
+  const epic = readJson(paths.epicLibrary, EpicLibrary);
+  const gog = readJson(paths.gogLibrary, GogLibrary);
+  const amazon = readJson(paths.amazonLibrary, AmazonLibrary);
 
   // A store cache only counts when its `__timestamp` wrapper is written too (Heronite's rule).
   return {
-    sideload: readStore<SideloadLibraryFile>(paths.sideloadLibrary)?.games ?? [],
+    sideload: readJson(paths.sideloadLibrary, SideloadLibrary)?.games ?? [],
     epic: epic !== undefined && epic.__timestamp?.library !== undefined ? (epic.library ?? []) : [],
     gog: gog !== undefined && gog.__timestamp?.games !== undefined ? (gog.games ?? []) : [],
     amazon:
       amazon !== undefined && amazon.__timestamp?.library !== undefined
         ? (amazon.library ?? [])
         : [],
-    gogInstalled: gogInstalledIndex(
-      readStore<GogInstalledFile>(paths.gogInstalled)?.installed ?? [],
-    ),
-    steamInstalled: installedIds(readStore<SteamLibraryFile>(paths.steamLibrary)),
-    hidden: hiddenIds(readStore<StoreConfigFile>(paths.storeConfig)),
-    localLibrary: readStore<LocalLibraryFile>(paths.localLibrary)?.games ?? {},
-    metadata: readStore<MetadataFile>(paths.metadata)?.games ?? {},
-    art: readStore<ArtFile>(paths.art)?.games ?? {},
-    emulators: readStore<EmulatorsFile>(paths.emulators)?.emulators ?? [],
-    copies: readStore<CopiesFile>(paths.copies),
-    sessions: readStore<SessionsFile>(paths.sessions)?.sessions ?? {},
-    statuses: readStore<StatusesFile>(paths.statuses)?.statuses ?? [],
-    timestamps: readStore<TimestampFile>(paths.timestamp) ?? {},
-    downloads: readStore<DownloadManagerFile>(paths.downloadManager),
+    gogInstalled: gogInstalledIndex(readJson(paths.gogInstalled, GogInstalled)?.installed ?? []),
+    steamInstalled: installedIds(readJson(paths.steamLibrary, SteamLibrary)),
+    hidden: hiddenIds(readJson(paths.storeConfig, StoreConfig)),
+    localLibrary: readJson(paths.localLibrary, LocalLibrary)?.games ?? {},
+    metadata: readJson(paths.metadata, Metadata)?.games ?? {},
+    art: readJson(paths.art, Art)?.games ?? {},
+    emulators: readJson(paths.emulators, Emulators)?.emulators ?? [],
+    copies: readJson(paths.copies, Copies),
+    sessions: readJson(paths.sessions, Sessions)?.sessions ?? {},
+    statuses: readJson(paths.statuses, Statuses)?.statuses ?? [],
+    timestamps: readJson(paths.timestamp, Timestamp) ?? {},
+    downloads: readJson(paths.downloadManager, DownloadManager),
   };
 }
 

@@ -6,10 +6,11 @@ import type { DownloadRow, DownloadState } from "@punktfunk/plugin-kit";
 import type { DownloadElement } from "./model.js";
 
 import { entryId } from "./identity.js";
-import { readStore } from "./json.js";
+import { readJson } from "./json.js";
 import { parseDisplaySize } from "./library.js";
 import { dataPaths } from "./paths.js";
-import { isRecord, nonEmpty } from "./text.js";
+import { DownloadManager } from "./schemas.js";
+import { nonEmpty } from "./text.js";
 
 /** What `store/download-manager.json` says, with Heronite's omissions already defaulted. */
 interface DownloadSnapshot {
@@ -28,12 +29,6 @@ interface DownloadId {
 
 /** Heronite's last sent rows, keyed by external id; `plugin.ts` owns one per process. */
 type DownloadMemory = Map<string, DownloadRow>;
-
-/** The queue or history array, dropping entries that are not objects at all. */
-function elements(value: unknown): readonly DownloadElement[] {
-  if (!Array.isArray(value)) return [];
-  return value.filter(isRecord) as readonly DownloadElement[];
-}
 
 /** A failed download Heronite did not explain still gets a sentence for the player. */
 const UNEXPLAINED_FAILURE = "Heronite stopped this download before it finished.";
@@ -74,12 +69,12 @@ function sameRow(left: DownloadRow, right: DownloadRow): boolean {
 
 /** Reads the queue and history; absent, malformed or non-object files are `undefined`. */
 export function readDownloads(dataRoot: string): DownloadSnapshot | undefined {
-  const file = readStore<unknown>(dataPaths(dataRoot).downloadManager);
-  if (!isRecord(file)) return undefined;
+  const file = readJson(dataPaths(dataRoot).downloadManager, DownloadManager);
+  if (file === undefined) return undefined;
 
   return {
-    queue: elements(file.queue),
-    finished: elements(file.finished),
+    queue: file.queue ?? [],
+    finished: file.finished ?? [],
     userPaused: file.userPaused === true,
   };
 }

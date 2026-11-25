@@ -1,20 +1,13 @@
-// Text and shape guards for Heronite's JSON. Plain helpers keep `heronite/*` free of the Effect
-// runtime (docs/port-plan.md); `effect/Predicate` would be the same code with a dependency.
+// Text guards for Heronite's JSON. `heronite/*` takes no Effect service or runtime
+// (docs/adr/0007-pure-decode-layer-injected-io.md), but the guards themselves come from
+// `effect/Predicate`: writing them by hand is what the Effect guide forbids, and the Predicate
+// module is a plain dependency, not a service.
+
+import { Predicate } from "effect";
 
 /** A trimmed non-empty string, or `undefined` for anything else. */
 export function nonEmpty(value: unknown): string | undefined {
-  return typeof value === "string" && value.trim() !== "" ? value : undefined;
+  return Predicate.isString(value) && value.trim() !== "" ? value : undefined;
 }
 
-export function isString(value: unknown): value is string {
-  return typeof value === "string";
-}
-
-export function isNumber(value: unknown): value is number {
-  return typeof value === "number";
-}
-
-/** A plain JSON object: not `null`, not an array. */
-export function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
+export const { isNumber } = Predicate;
