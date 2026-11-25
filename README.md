@@ -140,6 +140,18 @@ console toggle cannot change it. To turn it off, drop the leading `PROTON_ENABLE
 the original `exe` in [package.json](package.json); `test/manifest.test.ts` pins the nine wrapped
 transports so a reformat cannot quietly lose it.
 
+A game **already running at the desk** is handled by title: if its Steam AppId matches the entry
+being launched, the prep stops it too — otherwise the session's Heronite hands the launch to the
+desktop instance and exits, which tears the display down and reconnects in a loop. A _different_
+title running at the desk is left alone, with a line in the journal saying so.
+
+Two opt-outs, for the hook's `run` string or the installer's environment:
+
+```sh
+PUNKTFUNK_PREP=0     # never stop anything; close Steam/Heronite yourself before a stream
+PUNKTFUNK_RESTORE=0  # never start them again when a session ends
+```
+
 The prep stops only processes **without** `GAMESCOPE_WAYLAND_DISPLAY` in their environment, so the
 session's own Heronite and Steam are never touched, and a desk launch is skipped outright. It also
 leaves everything alone when a Steam game is running at the desk — killing an unsaved session is worse

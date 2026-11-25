@@ -12,6 +12,10 @@ set -u
 heronite_dir="${HERONITE_PROGRAM_DIR:-$HOME/Applications}"
 marker="${XDG_RUNTIME_DIR:-/tmp}/punktfunk-stream-prep.stopped"
 
+# Starting them again is a choice too: PUNKTFUNK_RESTORE=0 leaves the desktop exactly as the stream
+# left it, instead of restoring what the prep stopped.
+[ "${PUNKTFUNK_RESTORE:-1}" = 0 ] && exit 0
+
 [ -f "$marker" ] || exit 0
 
 # The session is torn down around the event: wait it out, or a reconnect is still streaming.

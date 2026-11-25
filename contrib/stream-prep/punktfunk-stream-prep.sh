@@ -16,8 +16,35 @@ marker="${XDG_RUNTIME_DIR:-/tmp}/punktfunk-stream-prep.stopped"
 
 [ "${PF_EVENT_GAME_PLANE:-native}" = local ] && exit 0
 
-# Never take down a game someone is playing at the desk: a held hook that kills an unsaved session
-# is worse than a stream that cannot start. Steam's own wrapper names the running title.
+# Turning the prep off is a supported choice: with it off, a Heronite or Steam already running on the
+# desktop keeps the launch, so the stream only works if you closed them yourself.
+[ "${PUNKTFUNK_PREP:-1}" = 0 ] && exit 0
+
+# A game running at the desk blocks the launch: the session's Heronite hands the request to the
+# desktop instance and exits, which tears the display down and reconnects in a loop. Stop it, but only
+# when it is the same title this launch is for — killing somebody's unrelated, unsaved session is
+# worse than a stream that cannot start.
+desk_appid() {
+    # Match the wrapper's own name, not the command line: a shell that merely mentions this string
+    # (the hook run by hand, an editor, a grep) is not a running game.
+    for p in $(pgrep -x reaper 2>/dev/null); do
+        cmd=$(tr '\0' ' ' <"/proc/$p/cmdline" 2>/dev/null) || continue
+        case "$cmd" in *"SteamLaunch AppId="*) ;; *) continue ;; esac
+        printf '%s\n' "$cmd" | sed -n 's/.*AppId=\([0-9][0-9]*\).*/\1/p'
+        return 0
+    done
+    return 1
+}
+
+launch_appid=$(printf '%s' "${PF_EVENT_GAME_APP:-}" | sed -n 's/.*steam_\([0-9][0-9]*\)$/\1/p')
+if running=$(desk_appid); then
+    if [ -z "$launch_appid" ] || [ "$running" != "$launch_appid" ]; then
+        logger -t punktfunk-stream-prep \
+            "a different Steam game is running at the desk (AppId=$running, launching=${launch_appid:-unknown}); left everything alone — quit it and reconnect"
+        exit 0
+    fi
+    logger -t punktfunk-stream-prep "the streamed title is running at the desk (AppId=$running); stopping it"
+fi
 if pgrep -f 'reaper SteamLaunch AppId=' >/dev/null 2>&1; then
     logger -t punktfunk-stream-prep "a Steam game is running at the desk; left everything alone"
     exit 0
