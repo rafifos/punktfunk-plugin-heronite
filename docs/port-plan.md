@@ -293,6 +293,21 @@ code:
   shorten that. The documented flow for a launcher chain is to stream the **launcher tile**
   (`role: launcher` keeps the session up until the client leaves) and start the game from inside
   it.
+- **A desktop instance answers the hand-off from the desktop's environment.** The `heronite://` and
+  `steam://rungameid/…` hand-offs go to whichever instance is already running, so a Heronite or
+  Steam left open on the host's own screen starts the game there — with no
+  `GAMESCOPE_WAYLAND_DISPLAY` and no `PUNKTFUNK_GAMESCOPE_WSI`, which is what makes the live gamescope
+  WSI layer report "Creating swapchain for non-Gamescope swapchain". `contrib/stream-prep/` installs a
+  held `game.launching` hook that stops the desktop instances before the launch and a `session.ended`
+  hook that starts them again. It is a host-side workaround for behaviour the manifest cannot express;
+  a plugin cannot stop its own siblings.
+- **Versioning moved to release-please.** The plan's milestone list assumed a hand-cut `v0.1.0` tag;
+  a tag was created that way and then reset so the first release comes from
+  `release-please-config.json` with `bootstrap-sha` at the fork point. `package.json`, `CHANGELOG.md`,
+  the tag and the npm package now come from one Conventional-Commits run, and
+  `.github/workflows/publish.yml` refuses a tag that disagrees with `package.json`. The tarball also
+  has to name `LICENSE-MIT`/`LICENSE-APACHE` explicitly: npm's automatic license include matches
+  `LICENSE`/`LICENSE.md`, not the `-MIT` suffix.
 
 ## Known limitations
 

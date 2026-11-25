@@ -57,7 +57,7 @@ still appears, compare the game's environment — inside the session it carries
 (`tr '\0' '\n' < /proc/<game pid>/environ`).
 
 **So neither has to be quit by hand**, install the two hooks. `hooks.json` supports `"hold": true` on
-`game.launching`: the launch waits for the hook, so it runs *before* the entry's command — a connect
+`game.launching`: the launch waits for the hook, so it runs _before_ the entry's command — a connect
 hook only races the launch and loses. From a checkout of this repository,
 `contrib/stream-prep/install.sh` copies both scripts and merges the three entries (`game.launching` →
 prep, `session.ended` and `host.started` → restore) into `~/.config/punktfunk/hooks.json`, then
@@ -73,9 +73,9 @@ leaves everything alone when a Steam game is running at the desk — killing an 
 than a stream that cannot start — and says so in the journal. The restore
 starts them again once gamescope is gone, through `systemd-run --user` so they outlive the hook's
 process group. A stopped Heronite also leaves `$XDG_RUNTIME_DIR/heronite-rs-*.sock` behind — the next
-start reads `ECONNRESET` from it and reports *already running but stopped responding* — so the prep
-removes it once no instance is alive. The same one-time result without hooks: turn off Steam's *Run
-Steam when my computer starts* and Heronite's *Start with the system*.
+start reads `ECONNRESET` from it and reports _already running but stopped responding_ — so the prep
+removes it once no instance is alive. The same one-time result without hooks: turn off Steam's _Run
+Steam when my computer starts_ and Heronite's _Start with the system_.
 
 A streamed game entry also waits for the game's **own window** before the client shows it. The host
 reports the game `running` as soon as its process is up, but holds its splash until the window
@@ -151,6 +151,32 @@ filters and the entry mapping are tested without a running host. `src/kit/librar
 the only place that talks to Punktfunk: it composes the kit's exported pieces because
 `defineLibraryPlugin` owns the only `serveUi` call and so cannot serve a per-game tab. That is why
 `@punktfunk/plugin-kit` is pinned to an exact version.
+
+## Releasing
+
+[release-please](https://github.com/googleapis/release-please) owns the version, the changelog and the
+tag; nothing is versioned by hand. Write [Conventional Commits](https://www.conventionalcommits.org/)
+on `main` — `feat:` bumps the minor, `fix:` the patch, `feat!:` the major — and the workflow opens (or
+updates) a _chore: release_ pull request:
+
+| Workflow                                                   | Runs on                                          | Does                                                                                                                                       |
+| ---------------------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| [ci.yml](.github/workflows/ci.yml)                         | every push to `main` and every pull request      | Biome, `tsc --noEmit`, `bun test`, build, `npm pack --dry-run`                                                                             |
+| [release-please.yml](.github/workflows/release-please.yml) | every push to `main`                             | opens the release PR; on merge, tags the commit and cuts the GitHub release, then calls `publish.yml`                                      |
+| [publish.yml](.github/workflows/publish.yml)               | called by the release, or run by hand with a tag | builds the tag, refuses a tag that disagrees with `package.json`, skips a version already on the registry, then `npm publish --provenance` |
+
+Merge the release PR to ship. The version in `package.json`, the changelog entry, the `vX.Y.Z` tag
+and the npm package therefore always agree. `publish.yml` also takes a tag by hand
+(_Actions → Publish → Run workflow_) to re-run one that failed, and it is safe to re-run: a version
+already on the registry is a no-op.
+
+Publishing needs one repository secret, `NPM_TOKEN`, an npm **Automation** token with write access to
+`@rafifos/plugin-heronite`. Provenance is signed through GitHub's OIDC identity, so the workflow asks
+for `id-token: write` and no extra setup. Once the first version exists, npm's trusted publishing can
+replace the token: bind the package to this repository and workflow on npmjs.com, drop the secret, and
+the same job authenticates over OIDC instead.
+
+The repository has to stay public for provenance attestations to be published.
 
 ## Downloads
 
