@@ -58,14 +58,18 @@ still appears, compare the game's environment — inside the session it carries
 
 **So neither has to be quit by hand**, install the two hooks. `hooks.json` supports `"hold": true` on
 `game.launching`: the launch waits for the hook, so it runs _before_ the entry's command — a connect
-hook only races the launch and loses. From a checkout of this repository,
-`contrib/stream-prep/install.sh` copies both scripts and merges the three entries (`game.launching` →
-prep, `session.ended` and `host.started` → restore) into `~/.config/punktfunk/hooks.json`, then
-restarts the host:
+hook only races the launch and loses. The installer copies both scripts and merges three entries
+(`game.launching` → prep, `session.ended` and `host.started` → restore) into
+`~/.config/punktfunk/hooks.json`, then restarts the host — no checkout needed:
 
 ```sh
-contrib/stream-prep/install.sh   # HERONITE_PROGRAM_DIR=… if the AppImage is not in ~/Applications
+curl -fsSL https://raw.githubusercontent.com/rafifos/punktfunk-plugin-heronite/main/contrib/stream-prep/install.sh | sh
 ```
+
+It is idempotent — entries it owns are replaced, any other hook in the file is kept — so re-running it
+after an update is safe. `PLUGIN_REF=…` pins the ref it downloads from, and
+`HERONITE_PROGRAM_DIR=…` names the app folder if the AppImage is not in `~/Applications`. From a
+checkout, `contrib/stream-prep/install.sh` installs the files beside it instead of downloading.
 
 The prep stops only processes **without** `GAMESCOPE_WAYLAND_DISPLAY` in their environment, so the
 session's own Heronite and Steam are never touched, and a desk launch is skipped outright. It also
