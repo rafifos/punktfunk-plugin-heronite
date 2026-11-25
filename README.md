@@ -68,7 +68,9 @@ contrib/stream-prep/install.sh   # HERONITE_PROGRAM_DIR=… if the AppImage is n
 ```
 
 The prep stops only processes **without** `GAMESCOPE_WAYLAND_DISPLAY` in their environment, so the
-session's own Heronite and Steam are never touched, and a desk launch is skipped outright. The restore
+session's own Heronite and Steam are never touched, and a desk launch is skipped outright. It also
+leaves everything alone when a Steam game is running at the desk — killing an unsaved session is worse
+than a stream that cannot start — and says so in the journal. The restore
 starts them again once gamescope is gone, through `systemd-run --user` so they outlive the hook's
 process group. A stopped Heronite also leaves `$XDG_RUNTIME_DIR/heronite-rs-*.sock` behind — the next
 start reads `ECONNRESET` from it and reports *already running but stopped responding* — so the prep

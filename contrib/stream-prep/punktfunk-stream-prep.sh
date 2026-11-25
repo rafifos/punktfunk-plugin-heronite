@@ -16,6 +16,13 @@ marker="${XDG_RUNTIME_DIR:-/tmp}/punktfunk-stream-prep.stopped"
 
 [ "${PF_EVENT_GAME_PLANE:-native}" = local ] && exit 0
 
+# Never take down a game someone is playing at the desk: a held hook that kills an unsaved session
+# is worse than a stream that cannot start. Steam's own wrapper names the running title.
+if pgrep -f 'reaper SteamLaunch AppId=' >/dev/null 2>&1; then
+    logger -t punktfunk-stream-prep "a Steam game is running at the desk; left everything alone"
+    exit 0
+fi
+
 in_session() {
     tr '\0' '\n' < "/proc/$1/environ" 2>/dev/null | grep -q '^GAMESCOPE_WAYLAND_DISPLAY='
 }
