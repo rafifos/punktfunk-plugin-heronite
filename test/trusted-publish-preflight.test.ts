@@ -155,6 +155,8 @@ describe("the trusted-publishing preflight", () => {
 
   it("says what each refusal status usually means", () => {
     expect(hint(401)).toContain("no trusted publisher matches");
+    // Not "is": a token the registry cannot verify answers 401 too.
+    expect(hint(401)).toContain("did not accept");
     expect(hint(403)).toContain("--allow-publish");
     expect(hint(404)).toContain("was not found");
     expect(hint(500)).toBeUndefined();
