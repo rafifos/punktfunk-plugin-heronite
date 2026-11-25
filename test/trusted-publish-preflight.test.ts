@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "bun:test";
 
-import { escapedName, verdict } from "../scripts/preflight-trusted-publish";
+import { escapedName, hint, verdict } from "../scripts/preflight-trusted-publish";
 
 /**
  * The script exists because npm reports a refused trusted-publishing exchange as a bare
@@ -104,6 +104,8 @@ describe("the trusted-publishing preflight", () => {
     expect(code).toBe(1);
     expect(stderr).toContain("No trusted publisher is configured");
     expect(stderr).toContain("HTTP 404");
+    // The registry's message is the fact; the hint saves a round of guessing what to do with it.
+    expect(stderr).toContain("the package or its trusted publisher was not found");
   });
 
   it("names the re-bind command with the repository the run is in", async () => {
@@ -149,6 +151,13 @@ describe("the trusted-publishing preflight", () => {
       reason: "HTTP 401: Unauthorized",
     });
     expect(verdict(502, "<html>bad gateway</html>").ok).toBe(false);
+  });
+
+  it("says what each refusal status usually means", () => {
+    expect(hint(401)).toContain("no trusted publisher matches");
+    expect(hint(403)).toContain("--allow-publish");
+    expect(hint(404)).toContain("was not found");
+    expect(hint(500)).toBeUndefined();
   });
 
   it("escapes a scope the way npm's endpoint expects", () => {

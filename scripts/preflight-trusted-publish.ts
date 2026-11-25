@@ -50,6 +50,23 @@ function verdict(status: number, body: string): Verdict {
   return { ok: false, reason: `HTTP ${status}: ${String(reason)}` };
 }
 
+/**
+ * What a refusal usually means, in the words of the person who has to repair it. npm's own message
+ * is kept above this; the mapping only saves a round of guessing.
+ */
+function hint(status: number): string | undefined {
+  switch (status) {
+    case 401:
+      return "the run's identity was rejected: no trusted publisher matches this repository, workflow file and package";
+    case 403:
+      return "a binding exists but does not allow publishing: re-bind it with --allow-publish";
+    case 404:
+      return "the package or its trusted publisher was not found: check the package exists and is yours";
+    default:
+      return undefined;
+  }
+}
+
 async function main(): Promise<number> {
   // A repository secret wins in publish.yml, so there is no exchange to preflight.
   if (process.env.NODE_AUTH_TOKEN) {
@@ -101,6 +118,8 @@ async function main(): Promise<number> {
   }
 
   fail(`the registry refused the OIDC exchange for ${pkg.name} (${outcome.reason})`);
+  const why = hint(response.status);
+  if (why) fail(why);
   fail(
     `bind or re-bind the workflow, then re-run: npm trust github ${pkg.name} ` +
       `--repo ${process.env.GITHUB_REPOSITORY ?? "<owner>/<repo>"} --file publish.yml --allow-publish`,
@@ -113,4 +132,4 @@ if (import.meta.main) {
   process.exit(await main());
 }
 
-export { escapedName, verdict };
+export { escapedName, hint, verdict };
