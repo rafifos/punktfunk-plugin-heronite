@@ -165,6 +165,9 @@ updates) a _chore: release_ pull request:
 | [release-please.yml](.github/workflows/release-please.yml) | every push to `main`                             | opens the release PR; on merge, tags the commit and cuts the GitHub release, then calls `publish.yml`                                      |
 | [publish.yml](.github/workflows/publish.yml)               | called by the release, or run by hand with a tag | builds the tag, refuses a tag that disagrees with `package.json`, skips a version already on the registry, then `npm publish --provenance` |
 
+The release pull request's CI run waits for a maintainer to approve it — GitHub treats a pull request
+opened by `github-actions[bot]` as outside-collaborator work — so approve the run, then merge.
+
 Merge the release PR to ship. The version in `package.json`, the changelog entry, the `vX.Y.Z` tag
 and the npm package therefore always agree. `publish.yml` also takes a tag by hand
 (_Actions → Publish → Run workflow_) to re-run one that failed, and it is safe to re-run: a version
@@ -185,12 +188,42 @@ npm trust github @rafifos/plugin-heronite \
 npm trust list @rafifos/plugin-heronite
 ```
 
-A trusted relationship can only be bound to a package that already exists, so the **first** version
-needs one bootstrap publish. Either log in locally and run `npm publish` from a checkout of the tag,
-or add a repository secret `NPM_TOKEN` (an npm Automation token) for that one release and delete it
-afterwards — `publish.yml` uses a token only when the secret is present and falls back to OIDC when it
-is not, so removing the secret is the switch. Publish with `--access public` and `--provenance`, as
-the workflow does.
+### The first version, once
+
+A trusted relationship can only be bound to a package that already exists, so version `0.1.0` needs
+one publish that is not trusted. Publish **the real version**, not a placeholder: npm versions are
+immutable, so a `0.0.0` stands in the version list forever, and unpublishing it releases the name
+that the trust binding hangs from. Merge the release pull request first, then, from the tag:
+
+```sh
+git checkout v0.1.0
+npm login                 # 2FA prompt
+bun install --frozen-lockfile
+npm publish --access public
+```
+
+`prepublishOnly` builds `dist`, so the tarball matches the tag. A local publish cannot attach
+provenance — that needs a CI OIDC identity — so `0.1.0` carries none and every later version does. If
+you want `0.1.0` attested too, put an npm Automation token in the `NPM_TOKEN` secret for that one
+release instead, then delete the secret: `publish.yml` uses a token only while the secret exists and
+authenticates over OIDC as soon as it is gone, and it skips a version that is already published, so
+merging the release after a manual publish is a no-op rather than a failure.
+
+Then bind the trust — and publish something within two days, because a new trusted publisher expires
+if it is never used:
+
+```sh
+npm trust github @rafifos/plugin-heronite \
+  --repo rafifos/punktfunk-plugin-heronite \
+  --file publish.yml --allow-publish
+npm trust list @rafifos/plugin-heronite
+```
+
+`--allow-publish` matters: a new relationship is allowed `npm stage publish` only, so plain
+`npm publish` from the workflow is refused without it. The workflow file to name is `publish.yml`,
+the one that holds the publishing job — a reusable workflow's jobs keep their own file's identity in
+the OIDC claims. If the registry rejects that with a workflow mismatch, add a second relationship for
+`release-please.yml`, the file that calls it; a package may hold up to ten.
 
 `bootstrap-sha` in `release-please-config.json` is `d537e40`, the parent of `190d767`, the first
 commit of this repository's own history, so every changelog starts at `190d767` and never reaches the
