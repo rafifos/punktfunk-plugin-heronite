@@ -73,17 +73,17 @@ jobs:
           fi
 
       # Until `npm trust github` is bound to this workflow the registry will not accept an OIDC
-      # token, so the very first version needs a token. --userconfig keeps it out of the repository
-      # and out of the runner's default npm config.
-      - name: Publish with an npm token
-        if: ${{ steps.check.outputs.publish == 'true' && secrets.npm-token != '' }}
+      # token, so the very first version needs one. `secrets` is not available in a step `if`, so
+      # the shell decides: a --userconfig keeps the token out of the runner's default npm config,
+      # and with no token the publish authenticates over the run's OIDC identity.
+      - name: Publish
+        if: steps.check.outputs.publish == 'true'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.npm-token }}
         run: |
-          printf '//registry.npmjs.org/:_authToken=%s\n' "$NODE_AUTH_TOKEN" >"$RUNNER_TEMP/.npmrc"
-          npm publish --provenance --access public --userconfig "$RUNNER_TEMP/.npmrc"
-
-      # The steady state: no secret anywhere, the run's OIDC identity is the credential.
-      - name: Publish with trusted publishing
-        if: ${{ steps.check.outputs.publish == 'true' && secrets.npm-token == '' }}
-        run: npm publish --provenance --access public
+          if [ -n "${NODE_AUTH_TOKEN:-}" ]; then
+            printf '//registry.npmjs.org/:_authToken=%s\n' "$NODE_AUTH_TOKEN" >"$RUNNER_TEMP/.npmrc"
+            npm publish --provenance --access public --userconfig "$RUNNER_TEMP/.npmrc"
+          else
+            npm publish --provenance --access public
+          fi

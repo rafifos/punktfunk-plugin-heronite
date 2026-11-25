@@ -7,7 +7,7 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!node_modules", "!.agents"]
+    "includes": ["**", "!node_modules", "!.agents", "!CHANGELOG.md"]
   },
   "formatter": {
     "enabled": true,
