@@ -8,7 +8,7 @@
   "homepage": "https://github.com/rafifos/punktfunk-plugin-heronite",
   "repository": {
     "type": "git",
-    "url": "https://github.com/rafifos/punktfunk-plugin-heronite.git"
+    "url": "git+https://github.com/rafifos/punktfunk-plugin-heronite.git"
   },
   "keywords": [
     "punktfunk",
@@ -20,7 +20,7 @@
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "bin": {
-    "punktfunk-plugin-heronite": "./dist/cli.js"
+    "punktfunk-plugin-heronite": "dist/cli.js"
   },
   "files": [
     "dist",
