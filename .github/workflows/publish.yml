@@ -27,7 +27,7 @@ jobs:
       # npm provenance and trusted publishing both authenticate the run through this identity.
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.ref }}
           persist-credentials: false
@@ -36,11 +36,18 @@ jobs:
         with:
           bun-version: 1.4.5
 
-      # No `registry-url`: that writes an `.npmrc` pointing at `${NODE_AUTH_TOKEN}`, which would
-      # shadow trusted publishing with an empty bearer token.
-      - uses: actions/setup-node@v4
+      # Node 24 for the npm line it carries: trusted publishing needs npm 11.5.1 or newer, and the
+      # version bundled with a given image is not guaranteed. No `registry-url`: it writes an
+      # `.npmrc` interpolating `${NODE_AUTH_TOKEN}`, and `publishConfig.registry` already names the
+      # registry.
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
+
+      - name: Use an npm that can use trusted publishing
+        run: |
+          npm install -g npm@latest
+          npm --version
 
       - name: Install
         run: bun install --frozen-lockfile
