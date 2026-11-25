@@ -98,8 +98,17 @@ A real capture from a gamescope session shows why that matters:
 Steam's runtime re-exposes the host session's Wayland socket inside the container, so a
 Wayland-capable client under it presents to KWin while the gamescope WSI layer is loaded — which is
 exactly when that layer reports `Creating swapchain for non-Gamescope swapchain`. Force the game onto
-X11 (`WAYLAND_DISPLAY= %command%` in its Steam launch options, or the same variable with an empty
-value in Heronite's per-game environment) if it happens to you.
+X11 with Steam → the game → Launch Options:
+
+```
+env -u WAYLAND_DISPLAY %command%
+```
+
+`env -u` unsets it rather than blanking it, and that difference matters: Proton decides on the
+variable's *presence*, `if "wayland" in self.compat_config and "WAYLAND_DISPLAY" in self.env`, so an
+empty value still enables the Wayland driver. HDR is unaffected either way — the HDR10 swapchain comes
+from the gamescope WSI layer over X11 (`--hdr-enabled`, `PUNKTFUNK_GAMESCOPE_WSI=1`, `DXVK_HDR=1`),
+none of which reads `WAYLAND_DISPLAY`.
 
 The prep stops only processes **without** `GAMESCOPE_WAYLAND_DISPLAY` in their environment, so the
 session's own Heronite and Steam are never touched, and a desk launch is skipped outright. It also
