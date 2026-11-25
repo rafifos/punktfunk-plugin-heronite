@@ -347,7 +347,10 @@ export const defineLibraryPluginWithUi = <S extends Schema.Top>(
               .filter((e) => e.store === (store ?? def.name))
               .map(fromHostEntry)
               .sort((a, b) => a.id.localeCompare(b.id));
-            yield* Effect.sync(() => writeFileSync(snapshot, `${JSON.stringify(mine, null, 2)}\n`));
+            yield* Effect.try({
+              try: () => writeFileSync(snapshot, `${JSON.stringify(mine, null, 2)}\n`),
+              catch: (cause) => new Error(`write ${snapshot}: ${cause}`),
+            });
             console.log(`captured ${mine.length} "${store ?? def.name}" entries to ${snapshot}`);
             return;
           }
