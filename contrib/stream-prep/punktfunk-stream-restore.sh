@@ -18,6 +18,16 @@ marker="${XDG_RUNTIME_DIR:-/tmp}/punktfunk-stream-prep.stopped"
 # the stream left it in, instead of starting what the prep stopped.
 [ "${PUNKTFUNK_RESTORE:-1}" = 0 ] && exit 0
 
+# The plugin writes this file from its two streaming settings. A hook cannot read settings, so the
+# file carries them: `stop_desktop=1` or `0`, and `capture=1` or `0`.
+flags="${XDG_CONFIG_HOME:-$HOME/.config}/punktfunk/plugin-state/heronite/stream-flags"
+flag() {
+	[ -r "$flags" ] && grep -qx "$1=0" "$flags"
+}
+
+[ "${PUNKTFUNK_PREP:-1}" = 0 ] && exit 0
+flag stop_desktop && exit 0
+
 [ -f "$marker" ] || exit 0
 
 # The session's own compositor. Compare what the process runs, not a command line that contains the
