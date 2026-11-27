@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.0](https://github.com/rafifos/punktfunk-plugin-heronite/compare/v0.3.0...v0.4.0) (2026-11-27)
+
+
+### Features
+
+* **launcher:** art, metadata and provenance for the two tiles ([7ea2af1](https://github.com/rafifos/punktfunk-plugin-heronite/commit/7ea2af18553c65cd972d803ba5773ad5c735f75f))
+* **stream-prep:** let the plugin's streaming settings skip the prep and restore hooks ([09f514d](https://github.com/rafifos/punktfunk-plugin-heronite/commit/09f514d36235aabdd2c3780f9adca30d1f081f8d))
+
 ## [0.3.0](https://github.com/rafifos/punktfunk-plugin-heronite/compare/v0.2.0...v0.3.0) (2026-11-27)
 
 
