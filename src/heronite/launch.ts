@@ -1,7 +1,7 @@
 // How the plugin starts Heronite. The transport is chosen once per install; every title then asks
 // Heronite to launch the game and the plugin never targets a game executable itself (ADR-0001).
 
-import type { ProviderEntry } from "@punktfunk/plugin-kit/wire";
+import type { Artwork, ProviderEntry } from "@punktfunk/plugin-kit/wire";
 
 import { existsSync, readdirSync } from "node:fs";
 
@@ -20,6 +20,22 @@ const APPIMAGE = /\.appimage$/i;
 const MAX_PROTOCOL_BYTES = 128;
 
 const WINDOW_URL = "heronite://";
+
+/** Heronite's author and first release year, as heronite.app states them. */
+const DEVELOPER = "Rafael Goulart";
+const FIRST_RELEASE_YEAR = 2026;
+
+/** The tile art's home. The host's art proxy fetches each file once and serves it from its store. */
+const ART_URL =
+  "https://raw.githubusercontent.com/rafifos/punktfunk-plugin-heronite/main/assets/brand/";
+
+/** One tile's four art slots, each naming the PNG in `assets/brand/` that holds it. */
+const tileArt = (file: string): Artwork => ({
+  portrait: `${ART_URL}portrait-${file}.png`,
+  hero: `${ART_URL}hero-${file}.png`,
+  logo: `${ART_URL}logo-${file}.png`,
+  header: `${ART_URL}header-${file}.png`,
+});
 
 interface LaunchEnvironment {
   readonly platform?: NodeJS.Platform;
@@ -199,20 +215,20 @@ export function gameLaunch(transport: Transport, runner: string, appName: string
 /**
  * The launcher tiles: Heronite's window, and the console mode when a program is known.
  *
- * Each tile names a **brand-mark token** and carries no artwork, because `icon` accepts only a
- * token. The host takes a token that matches `[a-z][a-z0-9-]{0,31}`, and every client resolves it
- * against the marks that it bundles. The host rejects image bytes and URLs. Its art proxy refuses
- * SVG and serves raster containers only, because the web console renders library art in a browser
- * and SVG is script-capable XML. The Heronite mark in `assets/heronite-marks/` therefore cannot
- * reach a tile from here. It belongs in `assets/launcher-icons`, and this plugin needs no change
- * when the mark arrives there.
+ * `icon` takes a **brand-mark token** only, never image bytes and never a URL, and every client
+ * resolves the token against the marks that it bundles. The mark's master is the `H` in
+ * `assets/heronite-marks/`; it belongs in punktfunk's `assets/launcher-icons`, and this plugin
+ * needs no change when a client ships it. Until one does, a tile falls back to its name on an
+ * accent face. Both tiles name the same token because Heronite has one mark: the `H` its tray
+ * icons draw.
  *
- * Both tiles name the same mark because Heronite has one: the `H` its tray icons draw, in both
- * themes. A second token would ask clients for art that does not exist.
+ * The `art` slots are what the mark cannot cover. The host's proxy serves raster containers only,
+ * because the web console renders library art in a browser and SVG is script-capable XML, so each
+ * slot names a PNG in `assets/brand/`, which the proxy fetches once and serves from its own store.
+ * The titles and descriptions are the same strings those banners show.
  *
- * No shipped client bundles `heronite` yet, so both tiles fall back to their name on an accent
- * face. That is the same appearance as before. The tiles show the mark, with no change here, when
- * the mark ships.
+ * Each tile also carries the facts a details pane shows for any entry: a platform, a title, a
+ * description, Heronite's author and its first release year.
  */
 export function launcherTiles(
   transport: Transport,
@@ -224,6 +240,11 @@ export function launcherTiles(
     tiles.push({
       external_id: "launcher",
       title: "Heronite",
+      platform: "PC",
+      description: "The game launcher's desktop window.",
+      developer: DEVELOPER,
+      release_year: FIRST_RELEASE_YEAR,
+      art: tileArt("heronite"),
       role: "launcher",
       icon: "heronite",
       launch: windowLaunch(transport),
@@ -236,6 +257,11 @@ export function launcherTiles(
     tiles.push({
       external_id: "console",
       title: "Heronite Console",
+      platform: "PC",
+      description: "A controller-first layout for a TV or Steam Deck.",
+      developer: DEVELOPER,
+      release_year: FIRST_RELEASE_YEAR,
+      art: tileArt("heronite-console"),
       role: "launcher",
       icon: "heronite",
       launch: console,

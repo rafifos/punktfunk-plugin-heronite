@@ -1,6 +1,8 @@
 // Launch transports, exec-template arguments and the two launcher tiles. The transport is chosen
 // per install, never per game: every title asks Heronite itself to start the game (ADR-0001).
 
+import { existsSync } from "node:fs";
+
 import { describe, expect, test } from "bun:test";
 
 import {
@@ -205,11 +207,26 @@ describe("gameLaunch", () => {
 });
 
 describe("launcherTiles", () => {
+  const ART_URL =
+    "https://raw.githubusercontent.com/rafifos/punktfunk-plugin-heronite/main/assets/brand/";
+
+  const tileArt = (file: string) => ({
+    portrait: `${ART_URL}portrait-${file}.png`,
+    hero: `${ART_URL}hero-${file}.png`,
+    logo: `${ART_URL}logo-${file}.png`,
+    header: `${ART_URL}header-${file}.png`,
+  });
+
   test("a PATH program yields the window and console tiles", () => {
     expect(launcherTiles({ kind: "run" })).toStrictEqual([
       {
         external_id: "launcher",
         title: "Heronite",
+        platform: "PC",
+        description: "The game launcher's desktop window.",
+        developer: "Rafael Goulart",
+        release_year: 2026,
+        art: tileArt("heronite"),
         role: "launcher",
         icon: "heronite",
         launch: { kind: "exec", value: "window" },
@@ -217,6 +234,11 @@ describe("launcherTiles", () => {
       {
         external_id: "console",
         title: "Heronite Console",
+        platform: "PC",
+        description: "A controller-first layout for a TV or Steam Deck.",
+        developer: "Rafael Goulart",
+        release_year: 2026,
+        art: tileArt("heronite-console"),
         role: "launcher",
         icon: "heronite",
         launch: { kind: "exec", value: "console" },
@@ -229,6 +251,11 @@ describe("launcherTiles", () => {
       {
         external_id: "launcher",
         title: "Heronite",
+        platform: "PC",
+        description: "The game launcher's desktop window.",
+        developer: "Rafael Goulart",
+        release_year: 2026,
+        art: tileArt("heronite"),
         role: "launcher",
         icon: "heronite",
         launch: {
@@ -240,6 +267,11 @@ describe("launcherTiles", () => {
       {
         external_id: "console",
         title: "Heronite Console",
+        platform: "PC",
+        description: "A controller-first layout for a TV or Steam Deck.",
+        developer: "Rafael Goulart",
+        release_year: 2026,
+        art: tileArt("heronite-console"),
         role: "launcher",
         icon: "heronite",
         launch: {
@@ -268,6 +300,11 @@ describe("launcherTiles", () => {
       {
         external_id: "launcher",
         title: "Heronite",
+        platform: "PC",
+        description: "The game launcher's desktop window.",
+        developer: "Rafael Goulart",
+        release_year: 2026,
+        art: tileArt("heronite"),
         role: "launcher",
         icon: "heronite",
         launch: { kind: "exec", value: "window-flatpak" },
@@ -275,6 +312,11 @@ describe("launcherTiles", () => {
       {
         external_id: "console",
         title: "Heronite Console",
+        platform: "PC",
+        description: "A controller-first layout for a TV or Steam Deck.",
+        developer: "Rafael Goulart",
+        release_year: 2026,
+        art: tileArt("heronite-console"),
         role: "launcher",
         icon: "heronite",
         launch: { kind: "exec", value: "console-flatpak" },
@@ -289,6 +331,11 @@ describe("launcherTiles", () => {
     expect(tiles[0]).toEqual({
       external_id: "launcher",
       title: "Heronite",
+      platform: "PC",
+      description: "The game launcher's desktop window.",
+      developer: "Rafael Goulart",
+      release_year: 2026,
+      art: tileArt("heronite"),
       role: "launcher",
       icon: "heronite",
       launch: {
@@ -321,6 +368,22 @@ describe("launcherTiles", () => {
     expect(tiles.map((tile) => tile.icon)).toEqual(["heronite", "heronite"]);
     for (const tile of tiles) {
       expect(tile.icon).toMatch(/^[a-z][a-z0-9-]{0,31}$/);
+    }
+  });
+
+  test("every art slot names a PNG that exists in assets/brand", () => {
+    for (const tile of launcherTiles({ kind: "run" })) {
+      const urls = Object.values(tile.art ?? {}).filter(
+        (url): url is string => url !== null && url !== undefined,
+      );
+      expect(urls).toHaveLength(4);
+      for (const url of urls) {
+        expect(url).toMatch(
+          /^https:\/\/raw\.githubusercontent\.com\/.+\/assets\/brand\/[a-z-]+\.png$/,
+        );
+        expect(url.startsWith(ART_URL)).toBe(true);
+        expect(existsSync(`assets/brand/${url.slice(ART_URL.length)}`)).toBe(true);
+      }
     }
   });
 });

@@ -3,7 +3,7 @@
   "version": "0.3.0",
   "private": false,
   "type": "module",
-  "description": "Lists your Heronite games in Punktfunk and lets Heronite launch them.",
+  "description": "The Punktfunk plugin for Heronite. Each game gets an entry in the host library, and Heronite itself launches it.",
   "license": "MIT OR Apache-2.0",
   "homepage": "https://github.com/rafifos/punktfunk-plugin-heronite",
   "repository": {

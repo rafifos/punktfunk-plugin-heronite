@@ -29,21 +29,24 @@ The plugin leaves out games that exist only in a store catalogue, hidden games, 
 and the `zoom` runner. A copy group that you linked in Heronite appears once, as the first installed
 copy.
 
-### The two launcher tiles' marks
+### The two launcher tiles
 
-Both tiles name a brand-mark token: `heronite` for the desktop tile and `heronite-console` for
-console mode. The host accepts no other value in that field. `icon` is a token that matches
-`[a-z][a-z0-9-]{0,31}`, and each client resolves the token against the marks that it bundles. The
-host rejects image bytes and URLs. The art slots cannot work around this, because the host's art
-proxy serves raster containers only and refuses SVG. The web console renders library art in a
-browser, and SVG is script-capable XML.
+Both tiles name the same brand-mark token, `heronite`. The host accepts no other value in that
+field. `icon` is a token that matches `[a-z][a-z0-9-]{0,31}`, and each client resolves the token
+against the marks that it bundles. The host rejects image bytes and URLs. No shipped client bundles
+`heronite` yet, so both tiles render their name on an accent face. They show the mark, with no
+release here, when `assets/launcher-icons` gains it.
 
-The art therefore belongs to the clients, not to a plugin. Heronite's mark is its `H`, the same mark
+The vector mark itself cannot travel through the art slots: the host's proxy serves raster
+containers only and refuses SVG, because the web console renders library art in a browser and SVG
+is script-capable XML. Rasters can, so each tile points its four art slots at the PNG set in
+[assets/brand](assets/brand): portrait, hero, logo and header, one set per tile, drawn from the
+same mark and set in Rubik. The host's proxy fetches each file once and serves it from its own
+store.
+
+The mark itself belongs to the clients, not to a plugin. Heronite's mark is its `H`, the same mark
 that its tray icons draw. The master copy is in [assets/heronite-marks](assets/heronite-marks), with
-its provenance recorded there and outside the published package. No shipped client bundles
-`heronite` yet, so both tiles render their name on an accent face. That is the same appearance as
-before this mark was added. The tiles show the mark, with no release here, when
-`assets/launcher-icons` gains it.
+its provenance recorded there and outside the published package.
 
 ## Setup
 
