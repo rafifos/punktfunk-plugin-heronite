@@ -69,8 +69,8 @@ Data root, in order: the configured **Heronite data folder**, then the platform 
 | Linux package     | `~/.local/share/heronite` (`$XDG_DATA_HOME/heronite`)         |
 | Linux Flatpak     | `~/.var/app/app.heronite.Heronite/data/heronite`              |
 | Windows installer | `~/AppData/Roaming/heronite/data` (`%APPDATA%\heronite\data`) |
-| Windows portable  | `<copy>\data` — only through the configured folder            |
-| any               | `HERONITE_DATA_DIR` — only through the configured folder      |
+| Windows portable  | `<copy>\data`, only through the configured folder             |
+| any               | `HERONITE_DATA_DIR`, only through the configured folder       |
 
 Files used:
 
@@ -105,8 +105,9 @@ A game is published when all of these hold:
   `launcher`, `client`, `xbox`, or a store runner (`legendary`, `gog`, `nile`);
 - it is installed, or Heronite is downloading it (then it is published as `install: missing`).
 
-Installed means Heronite's `is_installed`, or — for a store game — its `steamAppId` matching an entry
-the cached Steam library marks installed (ADR-0006: files are never probed).
+Installed means the `is_installed` value of Heronite. For a store game, it also means that its
+`steamAppId` matches an entry that the cached Steam library marks installed. ADR-0006 records that
+the plugin never reads the files to find a game.
 
 Copies are collapsed only for groups in `copies.json`; the first installed member is published.
 Automatic Steam twins and title-based groups stay separate in v1.
@@ -142,8 +143,9 @@ transport is chosen per install, not per game:
 | otherwise                 | `xdg-open` (Linux) / `explorer.exe` (Windows) with `heronite://launch?appName=…&runner=…` |
 
 Arguments use Heronite's two-argument `--launch` form so no URL encoding is involved. The protocol
-fallback percent-encodes both values; the host caps a parameter at 128 characters, so a title whose
-encoded URL exceeds that is dropped at publish time — an accepted limitation of the fallback.
+fallback percent-encodes both values. The host limits a parameter to 128 characters, so the plugin
+drops a title at publish time when its encoded URL is longer. This is an accepted limitation of the
+fallback.
 
 No `--handoff`: when the plugin starts Heronite, the host keeps the process tree and sees the game
 end. When an already-running Heronite takes the request, the spawned process exits immediately and
@@ -197,11 +199,11 @@ so portable copies and odd installs work without widening the manifest.
 
 ## Settings
 
-1. **Heronite data folder** — handed path, empty to auto-detect.
-2. **Heronite program folder** — handed path, optional; enables headless launches and the console
-   tile where the program is not on `PATH`.
-3. **Show a Heronite tile** — default on.
-4. **Show a Heronite Console tile** — default on; hidden when no program is known.
+1. **Heronite data folder:** a path that the operator gives, or empty for automatic detection.
+2. **Heronite program folder:** an optional path. It enables headless launches and the console tile
+   when the program is not on `PATH`.
+3. **Show a Heronite tile:** on by default.
+4. **Show a Heronite Console tile:** on by default, and hidden when the plugin knows no program.
 
 ## Testing
 
@@ -220,18 +222,18 @@ so portable copies and odd installs work without widening the manifest.
 
 ## Milestones
 
-1. **Scaffold and identity** — rename the package, write the manifest, remove the Hydra code and
-   fixtures, keep build/test/typecheck green, README stub. **Done.**
-2. **Data root, model and parser** — paths, tolerant JSON, types, fixtures, `detect` and
-   `paths`. **Done.**
-3. **Scan and entries** — library assembly, filters, copy collapse, Steam join, launch selection,
-   art, metadata, detect hints, launcher tiles, `scan --preview`. **Done.**
-4. **Plugin wiring** — `library-with-ui`, sync loop, watch and poll, settings, CLI verbs and
-   `parity`. **Done.**
-5. **Downloads and install asks** — queue mapping, reporter loop, install handlers, wait-on-launch.
+1. **Scaffold and identity:** rename the package, write the manifest, remove the Hydra code and
+   fixtures, keep build, test and typecheck green, and add a README stub. **Done.**
+2. **Data root, model and parser:** paths, tolerant JSON, types, fixtures, `detect` and `paths`.
    **Done.**
-6. **Per-game tab** — `serveUi({ game })`, playtime, status, sessions. **Done.**
-7. **Docs and first release** — README, the two primers, `v0.1.0`, npm publish, install check.
+3. **Scan and entries:** library assembly, filters, copy collapse, Steam join, launch selection,
+   art, metadata, detect hints, launcher tiles and `scan --preview`. **Done.**
+4. **Plugin wiring:** `library-with-ui`, sync loop, watch and poll, settings, CLI verbs and
+   `parity`. **Done.**
+5. **Downloads and install asks:** queue mapping, reporter loop, install handlers and
+   wait-on-launch. **Done.**
+6. **Per-game tab:** `serveUi({ game })`, playtime, status and sessions. **Done.**
+7. **Docs and first release:** README, the two primers, `v0.1.0`, npm publish and install check.
    **Docs done. The `v0.1.0` tag, the npm publish and launching a game from a real host are the
    remaining operator steps.**
 
@@ -242,8 +244,8 @@ code:
 
 - **The environment marker.** Heronite (a Heroic fork) stamps no `HERONITE_*` variable on games,
   but it does stamp `HEROIC_APP_NAME` with the app name on executable, store, launcher, client and
-  Xbox launches — not on emulator or `steam-uri` launches. `detect.env_marker` uses that for the
-  launches that have it, and omits it for the two that do not.
+  Xbox launches. It does not stamp emulator or `steam-uri` launches. `detect.env_marker` uses the
+  value for the launches that have it and omits it for the two that do not.
 - **Queue-only games.** A download Heronite started can be in `download-manager.json` before the
   store cache records it. Such a game is admitted from the queue element's `gameInfo` snapshot, so
   a downloading title appears at once instead of after the store refresh.
@@ -284,9 +286,9 @@ code:
 - **Single-instance hand-off.** The plan assumed `detect` hints keep a session alive when an
   already-running Heronite takes the request. They keep the _session_, not the _display_: the host
   spawns gamescope with the launch command as its child, and a hand-off caller exits in
-  milliseconds (measured: 58 ms), so gamescope ends and the display is torn down even though the
-  game starts in the other instance. The remedy is operational — quit Heronite, or turn off
-  **Start with the system**, before streaming — and the `paths` verb now says so.
+  milliseconds (measured: 58 ms), so gamescope ends and the display stops even though the game
+  starts in the other instance. The remedy is operational: quit Heronite, or turn off **Start with
+  the system**, before you stream. The `paths` verb now says this.
 - **The host waits for the game's own window, not the launcher's.** Its state machine is
   `launching → running → window`, and `window` is documented as often far later than the process
   ("a Proton prefix build, a splash on a black window"). A multi-launcher chain can therefore
@@ -295,9 +297,9 @@ code:
   (`role: launcher` keeps the session up until the client leaves) and start the game from inside
   it.
 - **A desktop instance answers the hand-off from the desktop's environment.** The `heronite://` and
-  `steam://rungameid/…` hand-offs go to whichever instance is already running, so a Heronite or
-  Steam left open on the host's own screen starts the game there — with no
-  `GAMESCOPE_WAYLAND_DISPLAY` and no `PUNKTFUNK_GAMESCOPE_WSI`, which is what makes the live gamescope
+  `steam://rungameid/…` hand-offs go to the instance that already runs, so a Heronite or Steam
+  process that stays open on the host's own screen starts the game there. That process has no
+  `GAMESCOPE_WAYLAND_DISPLAY` and no `PUNKTFUNK_GAMESCOPE_WSI`, and this makes the active gamescope
   WSI layer report "Creating swapchain for non-Gamescope swapchain". `contrib/stream-prep/` installs a
   held `game.launching` hook that stops the desktop instances before the launch and a `session.ended`
   hook that starts them again. It is a host-side workaround for behaviour the manifest cannot express;

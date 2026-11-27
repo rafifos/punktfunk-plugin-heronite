@@ -2,7 +2,8 @@
 
 Heronite is a free, open-source game launcher for Windows, Linux and the Steam Deck, written in
 Rust by Rafael Goulart. It gathers the games you own across several stores and emulators into one
-library and starts them itself — natively, through Wine/Proton on Linux, or through an emulator.
+library and starts them itself. It starts a game natively, through Wine or Proton on Linux, or
+through an emulator.
 It is [GPL-3.0](https://github.com/RafaelGoulartB/Heronite/blob/main/LICENSE), needs no account and
 sends no telemetry.
 
@@ -28,11 +29,11 @@ Launcher run as their own clients under Wine on Linux, and as themselves on Wind
 
 ## Platforms and install
 
-- **Windows 10 and 11, 64-bit** — an installer or a portable zip. Not code-signed yet, so SmartScreen
-  may warn once.
-- **Linux** — an AppImage that runs on most distributions including SteamOS and updates itself, plus
-  `.deb`, `.rpm` and Arch packages on the releases page.
-- **Steam Deck** — the AppImage, with a dedicated guide.
+- **Windows 10 and 11, 64-bit:** an installer or a portable zip. The package is not code-signed
+  yet, so SmartScreen can warn one time.
+- **Linux:** an AppImage that runs on most distributions, SteamOS included, and updates itself. The
+  releases page also has `.deb`, `.rpm` and Arch packages.
+- **Steam Deck:** the AppImage, with a dedicated guide.
 
 ## Performance
 
@@ -43,11 +44,11 @@ memory and 0.1 % CPU while idle, and 64 MB on disk.
 
 ## Where its data lives
 
-- **Data folder** — `~/.local/share/heronite` on Linux, `%APPDATA%\heronite\data` on Windows.
+- **Data folder:** `~/.local/share/heronite` on Linux, `%APPDATA%\heronite\data` on Windows.
   `HERONITE_DATA_DIR` overrides it.
-- **Library** — JSON files under `<data>/local_library/`: `library.json`, `sessions.json`,
-  `statuses.json`, `emulators.json` and their neighbours.
-- **UI state and caches** — `~/.config/heronite` and `~/.cache/heronite` on Linux.
+- **Library:** JSON files under `<data>/local_library/`, which include `library.json`,
+  `sessions.json`, `statuses.json` and `emulators.json`.
+- **UI state and caches:** `~/.config/heronite` and `~/.cache/heronite` on Linux.
 
 Nothing is shared with Heroic or with the earlier Heronite app (`heronite-rs`). The folder keeps
 their layout and formats, but Heronite never reads or writes Heroic's folders; Heroic's games come

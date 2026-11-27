@@ -118,16 +118,17 @@ function transportLines(transport: Transport): readonly string[] {
   if (transport.kind === "open") {
     return [
       named,
-      "warning: launches go through the heronite:// handler, which this plugin cannot verify is " +
-        "registered — without it xdg-open opens nothing, and a hand-off launch cannot hold a " +
-        "dedicated display. Set the Heronite program folder (heronite-rs or Heronite-*.AppImage).",
+      "warning: launches go through the heronite:// handler, and this plugin cannot verify that " +
+        "the handler is registered. Without it xdg-open opens nothing, and a hand-off launch cannot " +
+        "hold a dedicated display. Set the Heronite program folder (heronite-rs or " +
+        "Heronite-*.AppImage).",
     ];
   }
   return [
     named,
-    "warning: Heronite is single-instance — a running Heronite (Start with the system) takes the " +
-      "launch and the caller exits at once, which ends a dedicated streamed display. Quit Heronite " +
-      "before streaming, or turn its autostart off.",
+    "warning: Heronite permits one instance. A running Heronite (Start with the system) takes the " +
+      "launch, and the caller exits at once, which ends a dedicated streamed display. Quit " +
+      "Heronite before you stream, or turn off its autostart.",
   ];
 }
 

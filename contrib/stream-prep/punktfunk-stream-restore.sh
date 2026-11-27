@@ -1,26 +1,28 @@
 #!/bin/sh
-# punktfunk hook: "on": "session.ended" (and "host.started", for a host that died mid-session).
+# punktfunk hook: "on": "session.ended", and "host.started" for a host that stopped during a
+# session.
 #
-# Starts what punktfunk-stream-prep.sh stopped, from the user manager's environment — the desktop
-# session's, not a gamescope session's. The marker names what that was, so a stream that only
-# stopped Heronite does not open Steam.
+# Starts the programs that punktfunk-stream-prep.sh stopped. The hook uses the environment of the
+# user manager. That environment belongs to the desktop session, not to the gamescope session. The
+# marker file records what the prep stopped, so a stream that stopped only Heronite does not start
+# Steam.
 #
-# Through systemd-run, not a bare fork: a hook is killed with its process group when it returns, and
-# a plain setsid child still lost that race here. A transient user unit outlives it.
+# Use systemd-run, not a direct fork. The hook stops with its process group when it returns, and a
+# plain setsid child also lost that race here. A transient user unit continues after the hook.
 set -u
 
 heronite_dir="${HERONITE_PROGRAM_DIR:-$HOME/Applications}"
 marker="${XDG_RUNTIME_DIR:-/tmp}/punktfunk-stream-prep.stopped"
 
-# Starting them again is a choice too: PUNKTFUNK_RESTORE=0 leaves the desktop exactly as the stream
-# left it, instead of restoring what the prep stopped.
+# You can also turn the restore off. PUNKTFUNK_RESTORE=0 keeps the desktop in the condition that
+# the stream left it in, instead of starting what the prep stopped.
 [ "${PUNKTFUNK_RESTORE:-1}" = 0 ] && exit 0
 
 [ -f "$marker" ] || exit 0
 
-# The session's own compositor, found by what the process *is*, not by a command line that mentions
-# it: `pgrep -f punktfunk-gamescope` also matches the terminal that ran this script, and a stray
-# match here means the desktop is never restored.
+# The session's own compositor. Compare what the process runs, not a command line that contains the
+# name. `pgrep -f punktfunk-gamescope` also finds the terminal that ran this script. A wrong match
+# here means the desktop never comes back.
 session_alive() {
 	for dir in /proc/[0-9]*; do
 		exe=$(readlink "$dir/exe" 2>/dev/null) || continue
@@ -31,7 +33,8 @@ session_alive() {
 	return 1
 }
 
-# The session is torn down around the event: wait it out, or a reconnect is still streaming.
+# The session stops before and after the event. Wait until it stops, because a reconnecting client
+# still streams.
 i=0
 while [ "$i" -lt 32 ]; do
 	session_alive || break
@@ -51,7 +54,7 @@ start_desktop() {
 	if setsid -f "$@" </dev/null >/dev/null 2>&1; then
 		return 0
 	fi
-	# Failing quietly is why a desktop that never came back needed a terminal to explain.
+	# If the start fails here, nobody knows. Record it.
 	logger -t punktfunk-stream-restore "could not start $1; start it yourself"
 	return 1
 }

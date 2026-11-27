@@ -1,12 +1,13 @@
 #!/bin/sh
-# Installs the streaming hooks: three scripts into ~/.local/bin, five entries into
-# ~/.config/punktfunk/hooks.json, then restarts the host so it reloads host.env.
+# Installs the streaming hooks. The script copies three scripts to ~/.local/bin and adds five
+# entries to ~/.config/punktfunk/hooks.json. It then restarts the host to reload host.env.
 #
 #   curl -fsSL https://raw.githubusercontent.com/rafifos/punktfunk-plugin-heronite/main/contrib/stream-prep/install.sh | sh
 #
-# Idempotent: entries this script owns are replaced, every other hook is kept. Run from a checkout
-# it installs the files beside it; piped from curl it downloads them from the same ref.
-# PLUGIN_REF pins the ref to download (default main), HERONITE_PROGRAM_DIR the app folder.
+# The script is idempotent. It replaces the entries that it owns and keeps every other hook. If you
+# run it from a checkout, it installs the files next to it. If you pipe it from curl, it downloads
+# the files from the same ref. PLUGIN_REF sets the ref to download (default main).
+# HERONITE_PROGRAM_DIR sets the app folder.
 set -eu
 
 repo="rafifos/punktfunk-plugin-heronite"
@@ -17,7 +18,8 @@ bin="${HOME}/.local/bin"
 conf="${XDG_CONFIG_HOME:-$HOME/.config}/punktfunk"
 hooks="$conf/hooks.json"
 
-# Piped to `sh`, $0 is the shell, not a path: there are no siblings to copy.
+# When the script is piped to `sh`, $0 is the shell name, not a path. There are no files next to it
+# to copy.
 here=""
 case "$0" in
 sh | bash | dash | -sh | */sh | */bash) ;;
@@ -63,8 +65,8 @@ ours = [
         "timeout_s": 60,
     },
     {"on": "game.running", "run": capture, "timeout_s": 60},
-    # The same sample later, once Steam's Proton prefix and the game itself are up: `game.running`
-    # can fire a minute before the game owns a window, and the interesting processes appear later.
+    # The same sample later, after the Proton prefix of Steam and the game start. `game.running` can
+    # occur a minute before the game has a window, and the important processes start later.
     {"on": "game.running", "run": f"PUNKTFUNK_CAPTURE_DELAY=25 {capture}", "timeout_s": 60},
     {"on": "session.ended", "run": restore, "timeout_s": 60},
     {"on": "host.started", "run": restore, "timeout_s": 60},

@@ -1,18 +1,18 @@
 #!/bin/sh
-# punktfunk hook: "on": "game.running". Writes where the launched game renders, so a black screen
-# leaves evidence instead of needing somebody at a terminal while it happens.
+# punktfunk hook: "on": "game.running". Records where the launched game renders. If the screen stays
+# black, the log gives the answer without a terminal on the host.
 #
-# The question it answers: is the game an X11 client of the session's gamescope (DISPLAY=:N, no
-# WAYLAND_DISPLAY) or has it escaped to the desktop (DISPLAY=:0, or WAYLAND_DISPLAY=wayland-1)?
-# The gamescope WSI layer reports "Creating swapchain for non-Gamescope swapchain" exactly when the
-# second happens, so the log names the cause rather than a symptom.
+# The hook answers one question. Does the game use the session's gamescope as an X11 client
+# (DISPLAY=:N, no WAYLAND_DISPLAY)? Or does it render on the desktop (DISPLAY=:0, or
+# WAYLAND_DISPLAY=wayland-1)? In the second case, the gamescope WSI layer writes "Creating swapchain
+# for non-Gamescope swapchain". The log then shows the cause.
 set -u
 
-# Diagnostics are opt-out: PUNKTFUNK_CAPTURE=0 leaves no trace on disk.
+# You can turn the diagnostics off. PUNKTFUNK_CAPTURE=0 writes nothing to disk.
 [ "${PUNKTFUNK_CAPTURE:-1}" = 0 ] && exit 0
 
-# `game.running` fires when the host sees the launcher's process, which can be a minute before
-# Proton and the game exist. A delayed sample catches the game itself.
+# `game.running` occurs when the host sees the launcher's process. Proton and the game can start a
+# minute later. A delayed sample records the game itself.
 delay="${PUNKTFUNK_CAPTURE_DELAY:-0}"
 case "$delay" in '' | *[!0-9]*) delay=0 ;; esac
 [ "$delay" -gt 0 ] && sleep "$delay"
@@ -20,14 +20,15 @@ case "$delay" in '' | *[!0-9]*) delay=0 ;; esac
 out="${XDG_STATE_HOME:-$HOME/.local/state}/punktfunk/stream-diagnostics.log"
 mkdir -p "$(dirname "$out")"
 
-# One file, appended to on every stream, forever. Trim before writing so a long-lived host does not
-# grow it without bound; the newest samples are the ones worth keeping.
+# The host writes to one file on each stream, and the file has no natural limit. Trim it before each
+# write, so a host that runs for a long time does not grow it without bound. The newest samples
+# matter most.
 if [ -f "$out" ] && [ "$(wc -c <"$out" 2>/dev/null || echo 0)" -gt 524288 ]; then
 	tail -n 2000 "$out" >"$out.tmp" && mv "$out.tmp" "$out"
 fi
 
-# The session's own compositor, found by what the process *is*, not by a command line that mentions
-# it: `pgrep -f punktfunk-gamescope` also matches the terminal running this script.
+# The session's own compositor. Compare what the process runs, not a command line that contains the
+# name. `pgrep -f punktfunk-gamescope` also finds the terminal that runs this script.
 session_pids() {
 	for dir in /proc/[0-9]*; do
 		exe=$(readlink "$dir/exe" 2>/dev/null) || continue
@@ -42,16 +43,16 @@ session_pids() {
 
 	session=$(session_pids | head -1)
 	if [ -z "$session" ]; then
-		# The delayed sample outlives a session that ended early. Recording the desktop here reads
-		# as a stream that rendered to wayland-1, which is how it was misdiagnosed once already.
+		# The delayed sample can outlive a session that ends early. If the desktop is recorded here, the
+		# log shows a stream that rendered to wayland-1. This caused a wrong diagnosis before.
 		echo "--- no session: the stream ended before this sample; nothing about it to record"
 		echo
 		exit 0
 	fi
 	echo "session pid $session: $(tr '\0' ' ' <"/proc/$session/cmdline" 2>/dev/null | cut -c1-140)"
 
-	# Match on `comm`, the executable's own name: a shell whose command line merely mentions
-	# wine (this hook, a terminal, an editor) is not a game process.
+	# Compare `comm`, the executable's own name. A shell that only contains "wine" in its command
+	# line (this hook, a terminal, an editor) is not a game process.
 	found=0
 	for dir in /proc/[0-9]*; do
 		p=${dir#/proc/}
@@ -69,10 +70,10 @@ session_pids() {
 	done
 	[ "$found" = 0 ] && echo "--- no game process found yet"
 
-	# Surround leaves two traces. The host mints a null sink advertising the channel count the
-	# client asked for (pf-audio: "advertising `channels` so apps can produce real surround"), so a
-	# `2ch` sink means the session negotiated stereo before any game had an opinion. The stream's
-	# own spec then says what the game actually produced into it.
+	# A surround stream leaves two traces. The host makes a null sink that advertises the channel
+	# count that the client requested (pf-audio: "advertising `channels` so apps can produce real
+	# surround"). A `2ch` sink therefore shows that the session selected stereo before a game had an
+	# opinion. The spec of the stream then shows what the game sent to it.
 	if command -v pactl >/dev/null 2>&1; then
 		echo "--- audio sink: $(pactl get-default-sink 2>/dev/null || echo '?')"
 		echo "--- audio sinks (id name driver spec state):"
@@ -83,7 +84,7 @@ session_pids() {
 		echo "--- audio: pactl not found"
 	fi
 
-	# The host's own audio levers: hires (uncompressed PCM) and which sink mode it captures.
+	# Audio settings of the host: hires (uncompressed PCM) and the sink mode that it records.
 	for dir in /proc/[0-9]*; do
 		p=${dir#/proc/}
 		[ "$p" = "$$" ] && continue

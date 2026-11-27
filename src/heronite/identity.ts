@@ -7,7 +7,7 @@ export const PLUGIN_ID = "heronite";
 /** Runners whose own store client starts the game; they need no launch overlay. */
 export const STORE_RUNNERS: ReadonlySet<string> = new Set(["legendary", "gog", "nile"]);
 
-/** `<runner>:<appName>` — the provider entry's external id (ADR-0004). */
+/** `<runner>:<appName>`, the provider entry's external id (ADR-0004). */
 export function entryId(runner: string, appName: string): string {
   return `${runner}:${appName}`;
 }

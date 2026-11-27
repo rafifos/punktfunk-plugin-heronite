@@ -42,9 +42,9 @@ plugin before installing this one so both do not list the same library.
   dedicated display: it needs a registered `heronite://` handler, and `xdg-open` exits before a
   game appears, so a streamed session should use `heronite-rs`, a program folder (an AppImage is
   accepted) or Flatpak.
-- Heronite is single-instance. If it is already running — including **Start with the system** —
-  a launch hands off and exits in milliseconds, which tears down a streamed session's dedicated
-  display; quit Heronite before streaming.
+- Heronite permits one instance. If it already runs, including when **Start with the system** is
+  on, a launch gives the request to that instance and exits in milliseconds. This stops the
+  dedicated display of a streamed session, so quit Heronite before you stream.
 
 ## Install
 

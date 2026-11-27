@@ -57,7 +57,7 @@ function verdict(status: number, body: string): Verdict {
 function hint(status: number): string | undefined {
   switch (status) {
     case 401:
-      // A real run's token is minted by GitHub, so a missing binding is the usual cause — but the
+      // GitHub mints the token in a real run, so a missing binding is the usual cause, but the
       // registry answers the same way to a token it cannot verify, and naming one cause when there
       // are two is how a repair gets made against the wrong file.
       return "the registry did not accept this run's identity: usually no trusted publisher matches this repository, workflow file and package";

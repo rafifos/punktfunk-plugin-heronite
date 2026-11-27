@@ -1,4 +1,4 @@
-# Punktfunk–Heronite plugin
+# Punktfunk and Heronite plugin
 
 The vocabulary this repository uses to describe how a Punktfunk host learns about, launches, and reports on games managed by Heronite.
 

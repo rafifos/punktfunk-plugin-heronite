@@ -1,6 +1,6 @@
-// `defineLibraryPlugin` owns the only `serveUi` call, so it cannot serve a per-game tab. This
-// composes the kit's exported pieces instead — config service, provider client, sync engine, access
-// requests, `serveUi` and the CLI — reproducing its behaviour plus one game section.
+// `defineLibraryPlugin` owns the only `serveUi` call, so it cannot serve a per-game tab. This module
+// composes the exported parts of the kit instead: config service, provider client, sync engine,
+// access requests, `serveUi` and the CLI. It reproduces their behaviour and adds one game section.
 // `@punktfunk/plugin-kit` is pinned to 0.15.0 because this layer follows its internals.
 
 import type { EventOf, GameRef } from "@punktfunk/host/core";
@@ -85,7 +85,7 @@ const logOutcomes = (outcomes: readonly AccessRequestOutcome[]) =>
       if (outcome === "denied") return Effect.logInfo(`the operator did not allow ${path}`);
       if (outcome === "granted") {
         return Effect.logWarning(
-          `${path} is allowed but not visible to this plugin — a folder that appeared after the runner started needs a runner restart`,
+          `${path} is allowed but not visible to this plugin. A folder that appears after the runner starts needs a runner restart`,
         );
       }
       if (outcome === "refused:not_directory") return Effect.void;
@@ -189,8 +189,8 @@ export const defineLibraryPluginWithUi = <S extends Schema.Top>(
     readonly report: ScanReport;
   }> {
     const present = yield* def.detect(cfg);
-    // A launcher that isn't installed contributes NOTHING — not even its launcher entries. A
-    // "Steam Big Picture" tile on a box without Steam would only fail to launch.
+    // A launcher that is not installed adds no entries, and that includes its launcher entries. A
+    // "Steam Big Picture" tile on a machine without Steam would only fail to launch.
     if (!present) {
       return {
         entries: [] as readonly ProviderEntry[],
@@ -245,8 +245,9 @@ export const defineLibraryPluginWithUi = <S extends Schema.Top>(
     const engine = yield* makeSyncEngine<ScanReport, readonly ProviderEntry[], HostClient>({
       compute,
       apply: applyEntries(provider, state),
-      // The host IS the state: a full-replace reconcile is idempotent, so nothing is persisted
-      // between runs, and every sync pushes — which also covers a host reinstalled underneath us.
+      // The host holds the state. A full-replace reconcile is idempotent, so nothing is persisted
+      // between runs and every sync pushes. This also covers a host that is installed again below
+      // us.
       lastSync: { get: Effect.succeed(undefined), set: () => Effect.void },
       settings: cfgService.load.pipe(
         Effect.map((cfg) => def.watchDirs?.(cfg) ?? []),
@@ -290,8 +291,8 @@ export const defineLibraryPluginWithUi = <S extends Schema.Top>(
     }
 
     yield* engine.start;
-    // A saved settings change is exactly when a user expects the library to update — and it may
-    // have changed `watchDirs`, so re-read settings rather than just re-syncing.
+    // A saved settings change is when a user expects the library to update. The change can also
+    // change `watchDirs`, so read the settings again instead of only syncing again.
     yield* Effect.forkScoped(Stream.runForEach(cfgService.changes, () => engine.reconfigure));
     yield* Effect.never;
   });

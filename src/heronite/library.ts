@@ -38,7 +38,7 @@ interface ResolvedEmulator {
 
 /** One game that passed Heronite's filters, with everything an entry needs already joined. */
 interface CollectionGame {
-  /** `<runner>:<appName>` — the metadata key, the external id (ADR-0004). */
+  /** `<runner>:<appName>`, the metadata key and the external id (ADR-0004). */
   readonly key: string;
   readonly runner: string;
   readonly appName: string;

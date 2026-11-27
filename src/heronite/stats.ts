@@ -1,5 +1,5 @@
 // The per-game tab's data: playtime, sessions, status, source and install state for one entry.
-// Reads only — this module never writes to Heronite's files, and it never probes a game's files
+// Reads only. This module never writes to the files of Heronite, and it never reads a game's files
 // (ADR-0006); install state is Heronite's own.
 
 import type { StatusLine } from "@punktfunk/plugin-kit";

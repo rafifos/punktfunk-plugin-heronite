@@ -32,26 +32,27 @@ Nothing here changes what a tile renders. The mark reaches a tile through punktf
 1. Copy `heronite.svg` to `assets/launcher-icons/heronite.svg`.
 2. Add a row for it to the table in `assets/launcher-icons/README.md`.
 3. Add `heronite` to `LAUNCHER_ICONS` in the plugin kit's `wire.ts`.
-4. Run `bash scripts/gen-launcher-icons.sh heronite` and follow the checklist it prints — the
-   per-client derivatives plus each client's shipped-token list.
+4. Run `bash scripts/gen-launcher-icons.sh heronite` and follow the checklist that it prints. The
+   checklist contains the per-client derivatives and the shipped-token list of each client.
 5. Record the attribution in `assets/launcher-icons/LICENSES/` and fold it into
    `THIRD-PARTY-NOTICES.txt`.
 
 This plugin needs no change afterwards: it already names the token, so its tiles light up on clients
 that ship the mark and keep falling back to the tile name on those that do not.
 
-These files are not in the published package — `files` in `package.json` lists only `dist` and the
+These files are not in the published package. `files` in `package.json` lists only `dist` and the
 two code licences.
 
 ## Provenance, and no licence claimed here
 
-The marks are Heronite's, © Rafael Goulart B — the application icons and the tray art they come from:
+The marks belong to Heronite, © Rafael Goulart B. They are the application icons and the tray art
+that these files come from:
 
-- <https://github.com/RafaelGoulartB/Heronite> — `packaging/icons`, `app/assets/tray`
+- <https://github.com/RafaelGoulartB/Heronite>: `packaging/icons`, `app/assets/tray`
 
 This file deliberately states no licence. The terms are the Heronite project's to set, and a file
 here cannot grant what it does not hold: restating a licence that the project has not chosen would
-be a claim, not a grant. Nothing in this repository publishes them either — neither the art nor this
+be a claim, not a grant. Nothing in this repository publishes them either. Neither the art nor this
 README is in the npm tarball, and no build step compiles the SVGs into `dist`.
 
 **What that means for step 1 above.** Before the mark goes into punktfunk it needs explicit,

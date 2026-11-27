@@ -17,7 +17,7 @@ jobs:
       image: oven/bun:1
     timeout-minutes: 15
     steps:
-      # oven/bun's slim base ships neither git nor a CA bundle — actions/checkout needs both.
+      # oven/bun's slim base ships neither git nor a CA bundle. actions/checkout needs both.
       - name: Install git + CA certs
         run: apt-get update && apt-get install -y --no-install-recommends ca-certificates git nodejs
       - uses: actions/checkout@v4
@@ -37,7 +37,7 @@ jobs:
         run: bun test
       - name: Build
         run: bun run build
-      - name: Sanity — plugin default export is a valid PluginDef
+      - name: "Sanity: plugin default export is a valid PluginDef"
         run: |
           bun -e 'import plugin from "./dist/index.js"; if (plugin?.name !== "hydra" || typeof plugin?.main !== "function") { console.error("bad default export", plugin); process.exit(1); } console.log("ok:", plugin.name)'
 
@@ -70,7 +70,7 @@ jobs:
         run: |
           PKG="$(node -p "require('./package.json').version")"
           if V="$PKG" bun -e 'fetch("https://git.unom.io/api/packages/unom/npm/@punktfunk%2Fplugin-hydra").then(r=>r.json()).then(d=>process.exit(d.versions?.[process.env.V]?0:1)).catch(()=>process.exit(1))'; then
-            echo "@punktfunk/plugin-hydra@$PKG is already on the registry — nothing to publish"
+            echo "@punktfunk/plugin-hydra@$PKG is already on the registry; nothing to publish"
           else
             bun publish
           fi

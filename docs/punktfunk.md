@@ -9,9 +9,10 @@ tracking: the two ends meet on your own network, or through a VPN you control.
 
 Two roles:
 
-- **Host** — the PC you stream _from_. It captures the screen, encodes it on the GPU, sends it, and
+- **Host:** the PC you stream _from_. It captures the screen, encodes it on the GPU, sends it, and
   receives input back.
-- **Client** — the device you stream _to_: phone, tablet, Steam Deck, TV or another PC.
+- **Client:** the device you stream _to_, which can be a phone, tablet, Steam Deck, TV or another
+  PC.
 
 A client pairs with a host once and reconnects on its own afterwards. Each connected device gets its
 own **virtual display** at that device's exact resolution and refresh rate, so several people can

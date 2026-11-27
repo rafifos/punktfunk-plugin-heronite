@@ -10,10 +10,11 @@
 import { Effect, Option, Schema } from "effect";
 
 /**
- * A field whose value may be anything: the plugin's readers already ignore a value of the wrong
- * type (a size written as a number, a title written as an object), so a schema is not allowed to
- * be stricter than they are — one odd field must never cost the whole document. Structure is still
- * checked: containers (arrays, records, the document itself) must have the right shape.
+ * A field whose value may be anything. The readers of the plugin already ignore a value of the
+ * wrong type, for example a size written as a number or a title written as an object, so a schema
+ * must not be stricter than they are. One odd field must never cost the whole document. Structure
+ * is still checked: containers (arrays, records and the document itself) must have the right
+ * shape.
  */
 const lax = <A>(self: Schema.Schema<A>): Schema.Schema<A | undefined> =>
   Schema.catchDecoding<Schema.Schema<A | undefined>>(() => Effect.succeed(Option.some(undefined)))(

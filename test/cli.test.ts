@@ -120,7 +120,7 @@ describe("cli", () => {
 
     expect(lines).toContain(`transport: run-program (${join(programDir, "heronite-rs")})`);
     expect(
-      lines.some((line) => line.startsWith("warning: ") && line.includes("single-instance")),
+      lines.some((line) => line.startsWith("warning: ") && line.includes("one instance")),
     ).toBe(true);
   });
 

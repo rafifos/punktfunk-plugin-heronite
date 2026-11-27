@@ -1,6 +1,6 @@
 // One Collection game to one provider entry. The external id is Heronite's metadata key
-// (ADR-0004); art is whatever the host's proxy can serve — an http(s) URL it fetches, or a local
-// path inside one of its art roots, which is where Heronite's own `localart://` store lives.
+// (ADR-0004). The art is whatever the host's proxy can serve: an http(s) URL that it fetches, or a
+// local path inside one of its art roots, which is where Heronite's own `localart://` store lives.
 
 import type { ArtKind } from "@punktfunk/plugin-kit/library";
 import type {
@@ -46,8 +46,8 @@ function steamCdnUrl(appId: number, kind: ArtKind): string | undefined {
  * therefore inside the root the proxy allows. Only rasters are served, and Heronite writes `jpg`,
  * `png` and `webp`, so those pass.
  *
- * Earlier revisions skipped this and fell through to a guessed Steam CDN filename — which is why
- * tiles whose art Heronite holds locally showed nothing: measured against the CDN,
+ * Earlier revisions skipped this step and used a guessed Steam CDN filename. That is why tiles
+ * showed nothing when Heronite held the art locally. Measured against the CDN,
  * `library_600x900.jpg` and `logo.png` answer 404 for a typical app id while `library_hero.jpg`
  * answers 200.
  */

@@ -1,18 +1,19 @@
 #!/bin/sh
 # punktfunk hook: "on": "game.launching", "hold": true.
 #
-# Runs before the entry's command starts, and the launch waits for it. Heronite runs one instance per
-# data folder: an instance left on the desktop answers the session's launch and exits, so the game
-# opens on the host's screen and the stream's display is torn down. This clears the desk's Heronite
-# and Steam out of the way, and punktfunk-stream-restore.sh puts back what it stopped.
+# The hook runs before the entry's command starts. The launch waits for the hook to finish.
 #
-# The rendering side — the game reaching the session's compositor instead of the desktop's — is not
-# a hook's job: the host forks the game with an environment a hook cannot reach into. When a game
-# escaped to the desktop it was the launcher injecting `WAYLAND_DISPLAY` (a per-app override in
-# Heronite's own settings), so the fix belongs in the launcher, not here.
+# Heronite permits one instance for each data folder. If an instance stays open on the desktop, it
+# answers the session's launch and then exits. The game then opens on the host's screen, and the
+# stream's display stops. This hook closes the desktop's Heronite and Steam.
+# punktfunk-stream-restore.sh starts them again.
 #
-# Only processes without GAMESCOPE_WAYLAND_DISPLAY in their environment are stopped: those are the
-# desktop's. A local (desk) launch never runs this.
+# A hook cannot correct where the game renders. The host starts the game with an environment that
+# the hook cannot change. If a game appears on the desktop, the launcher set `WAYLAND_DISPLAY`. Look
+# in the launcher's own settings.
+#
+# The hook stops only processes that have no GAMESCOPE_WAYLAND_DISPLAY in their environment. These
+# processes belong to the desktop. A local (desk) launch does not run this hook.
 set -u
 
 heronite_dir="${HERONITE_PROGRAM_DIR:-$HOME/Applications}"
@@ -20,17 +21,17 @@ marker="${XDG_RUNTIME_DIR:-/tmp}/punktfunk-stream-prep.stopped"
 
 [ "${PF_EVENT_GAME_PLANE:-native}" = local ] && exit 0
 
-# Turning the prep off is a supported choice: with it off, a Heronite or Steam already running on the
-# desktop keeps the launch, so the stream only works if you closed them yourself.
+# You can turn the prep off. If it is off, a Heronite or Steam process that already runs on the
+# desktop keeps the launch. The stream then operates only if you closed these processes yourself.
 [ "${PUNKTFUNK_PREP:-1}" = 0 ] && exit 0
 
-# A game running at the desk blocks the launch: the session's Heronite hands the request to the
-# desktop instance and exits, which tears the display down and reconnects in a loop. Stop it, but only
-# when it is the same title this launch is for — killing somebody's unrelated, unsaved session is
-# worse than a stream that cannot start.
+# A game on the desktop blocks the launch. The session's Heronite gives the request to the desktop
+# instance and exits. The display stops and reconnects in a loop. The hook stops the game, but only
+# if it is the same title as the launch. It is worse to stop an unrelated session with unsaved data
+# than to have a stream that does not start.
 desk_appid() {
-	# Match the wrapper's own name, not the command line: a shell that merely mentions this string
-	# (the hook run by hand, an editor, a grep) is not a running game.
+	# Compare the wrapper's own name, not the command line. A shell, an editor, or a grep command
+	# that contains this string is not a running game.
 	for p in $(pgrep -x reaper 2>/dev/null); do
 		cmd=$(tr '\0' ' ' <"/proc/$p/cmdline" 2>/dev/null) || continue
 		case "$cmd" in *"SteamLaunch AppId="*) ;; *) continue ;; esac
@@ -44,7 +45,7 @@ launch_appid=$(printf '%s' "${PF_EVENT_GAME_APP:-}" | sed -n 's/.*steam_\([0-9][
 if running=$(desk_appid); then
 	if [ -z "$launch_appid" ] || [ "$running" != "$launch_appid" ]; then
 		logger -t punktfunk-stream-prep \
-			"a different Steam game is running at the desk (AppId=$running, launching=${launch_appid:-unknown}); left everything alone — quit it and reconnect"
+			"a different Steam game is running at the desk (AppId=$running, launching=${launch_appid:-unknown}); left everything alone; quit it and reconnect"
 		exit 0
 	fi
 	logger -t punktfunk-stream-prep "the streamed title is running at the desk (AppId=$running); stopping it"
@@ -54,8 +55,8 @@ in_session() {
 	tr '\0' '\n' <"/proc/$1/environ" 2>/dev/null | grep -q '^GAMESCOPE_WAYLAND_DISPLAY='
 }
 
-# Anchored on argv[0] or the executable name: a shell whose command line merely mentions the path
-# is not an instance, and killing it would take a terminal or this hook down with it.
+# Match the executable name, not the command line. A shell that only contains the path is not an
+# instance. Do not stop it: it can be a terminal or this hook.
 heronite_pids() {
 	{
 		pgrep -f "^$heronite_dir/Heronite-[^ ]*\.(appimage|AppImage)($| )" 2>/dev/null
@@ -66,16 +67,17 @@ heronite_pids() {
 
 stopped=""
 
-# Heronite: the desktop instance takes heronite:// and exits, so the launch never enters the session.
+# Heronite: the desktop instance accepts heronite:// and exits. The launch then never starts in the
+# session.
 for p in $(heronite_pids); do
 	if ! in_session "$p"; then
 		kill "$p" 2>/dev/null && stopped="$stopped heronite"
 	fi
 done
 
-# Steam: the game inherits its environment, so a desktop Steam leaks the desktop display. `steam`
-# is a wrapper script that waits on the client, so bound it: an unbounded call would hold the
-# launch until the hook's own timeout fires.
+# Steam: the game gets its environment from Steam. A Steam process on the desktop gives the game
+# the display of the desktop. The `steam` command is a wrapper script that waits for the client.
+# Limit the time that it can take. Without a limit, it holds the launch until the hook times out.
 if pgrep -x steam >/dev/null 2>&1 && command -v steam >/dev/null 2>&1; then
 	if command -v timeout >/dev/null 2>&1; then
 		timeout --signal=TERM --kill-after=5 10 steam -shutdown >/dev/null 2>&1
@@ -89,7 +91,7 @@ if pgrep -x steam >/dev/null 2>&1 && command -v steam >/dev/null 2>&1; then
 	done
 fi
 
-# Bounded: a client that will not die must not hang the launch it is holding.
+# The wait is limited. A client that does not stop must not hold the launch.
 desk_alive() {
 	for p in $(heronite_pids) $(pgrep -x steam 2>/dev/null); do
 		in_session "$p" || return 0
@@ -108,15 +110,15 @@ if desk_alive; then
 		"a desktop client is still alive after 15s; the launch may be answered by the desk instance"
 fi
 
-# A terminated Heronite leaves its single-instance socket behind, and the next start reads
-# ECONNRESET from it and reports "already running but stopped responding" instead of starting.
-# Only when no instance is alive: a live one owns its socket.
+# A stopped Heronite keeps its single-instance socket. The next start reads ECONNRESET from the
+# socket and reports "already running but stopped responding". Remove the socket only when no
+# instance is active. An active instance owns its socket.
 if [ -z "$(heronite_pids)" ]; then
 	rm -f "${XDG_RUNTIME_DIR:-/tmp}"/heronite-rs-*.sock
 fi
 
 if [ -n "$stopped" ]; then
-	# Two instances of one client would otherwise write "steam steam".
+	# Two instances of one client write two entries. Keep one.
 	stopped=$(printf '%s\n' $stopped | sort -u | tr '\n' ' ')
 	printf '%s\n' "$stopped" >"$marker"
 	logger -t punktfunk-stream-prep "stopped:$stopped"

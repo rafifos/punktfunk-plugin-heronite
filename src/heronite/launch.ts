@@ -199,19 +199,20 @@ export function gameLaunch(transport: Transport, runner: string, appName: string
 /**
  * The launcher tiles: Heronite's window, and the console mode when a program is known.
  *
- * Each names a **brand-mark token** rather than carrying artwork, because that is the only thing
- * `icon` accepts: the host takes a token matching `[a-z][a-z0-9-]{0,31}` and every client resolves
- * it against the marks it bundles. Image bytes and URLs are rejected, and the host's art proxy
- * refuses SVG outright — it serves raster containers only, because the web console renders library
- * art in a browser and SVG is script-capable XML. So the Heronite mark in
- * `assets/heronite-marks/` cannot reach a tile from here; it belongs in `assets/launcher-icons`,
- * and this plugin needs no change once it lands there.
+ * Each tile names a **brand-mark token** and carries no artwork, because `icon` accepts only a
+ * token. The host takes a token that matches `[a-z][a-z0-9-]{0,31}`, and every client resolves it
+ * against the marks that it bundles. The host rejects image bytes and URLs. Its art proxy refuses
+ * SVG and serves raster containers only, because the web console renders library art in a browser
+ * and SVG is script-capable XML. The Heronite mark in `assets/heronite-marks/` therefore cannot
+ * reach a tile from here. It belongs in `assets/launcher-icons`, and this plugin needs no change
+ * when the mark arrives there.
  *
  * Both tiles name the same mark because Heronite has one: the `H` its tray icons draw, in both
  * themes. A second token would ask clients for art that does not exist.
  *
  * No shipped client bundles `heronite` yet, so both tiles fall back to their name on an accent
- * face — exactly what they rendered before — and light up unchanged when the mark ships.
+ * face. That is the same appearance as before. The tiles show the mark, with no change here, when
+ * the mark ships.
  */
 export function launcherTiles(
   transport: Transport,
