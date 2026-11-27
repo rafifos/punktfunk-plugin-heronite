@@ -1,5 +1,5 @@
 #!/bin/sh
-# Installs the streaming hooks: both scripts into ~/.local/bin, three entries into
+# Installs the streaming hooks: three scripts into ~/.local/bin, five entries into
 # ~/.config/punktfunk/hooks.json, then restarts the host so it reloads host.env.
 #
 #   curl -fsSL https://raw.githubusercontent.com/rafifos/punktfunk-plugin-heronite/main/contrib/stream-prep/install.sh | sh

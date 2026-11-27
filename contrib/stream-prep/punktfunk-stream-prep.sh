@@ -6,9 +6,10 @@
 # opens on the host's screen and the stream's display is torn down. This clears the desk's Heronite
 # and Steam out of the way, and punktfunk-stream-restore.sh puts back what it stopped.
 #
-# The rendering side — the game reaching the session's compositor instead of the desktop's — is
-# Heronite's own global environment now (`WAYLAND_DISPLAY`, empty), not a hook's job: a hook is a
-# separate process, and a child's environment is fixed when the host forks it.
+# The rendering side — the game reaching the session's compositor instead of the desktop's — is not
+# a hook's job: the host forks the game with an environment a hook cannot reach into. When a game
+# escaped to the desktop it was the launcher injecting `WAYLAND_DISPLAY` (a per-app override in
+# Heronite's own settings), so the fix belongs in the launcher, not here.
 #
 # Only processes without GAMESCOPE_WAYLAND_DISPLAY in their environment are stopped: those are the
 # desktop's. A local (desk) launch never runs this.
@@ -72,9 +73,15 @@ for p in $(heronite_pids); do
 	fi
 done
 
-# Steam: the game inherits its environment, so a desktop Steam leaks the desktop display.
-if pgrep -x steam >/dev/null 2>&1; then
-	command -v steam >/dev/null 2>&1 && steam -shutdown >/dev/null 2>&1
+# Steam: the game inherits its environment, so a desktop Steam leaks the desktop display. `steam`
+# is a wrapper script that waits on the client, so bound it: an unbounded call would hold the
+# launch until the hook's own timeout fires.
+if pgrep -x steam >/dev/null 2>&1 && command -v steam >/dev/null 2>&1; then
+	if command -v timeout >/dev/null 2>&1; then
+		timeout --signal=TERM --kill-after=5 10 steam -shutdown >/dev/null 2>&1
+	else
+		steam -shutdown >/dev/null 2>&1
+	fi
 	for p in $(pgrep -x steam 2>/dev/null); do
 		if ! in_session "$p"; then
 			kill "$p" 2>/dev/null && stopped="$stopped steam"
@@ -96,6 +103,11 @@ while [ "$i" -lt 60 ] && desk_alive; do
 	i=$((i + 1))
 done
 
+if desk_alive; then
+	logger -t punktfunk-stream-prep \
+		"a desktop client is still alive after 15s; the launch may be answered by the desk instance"
+fi
+
 # A terminated Heronite leaves its single-instance socket behind, and the next start reads
 # ECONNRESET from it and reports "already running but stopped responding" instead of starting.
 # Only when no instance is alive: a live one owns its socket.
@@ -104,6 +116,8 @@ if [ -z "$(heronite_pids)" ]; then
 fi
 
 if [ -n "$stopped" ]; then
+	# Two instances of one client would otherwise write "steam steam".
+	stopped=$(printf '%s\n' $stopped | sort -u | tr '\n' ' ')
 	printf '%s\n' "$stopped" >"$marker"
 	logger -t punktfunk-stream-prep "stopped:$stopped"
 fi

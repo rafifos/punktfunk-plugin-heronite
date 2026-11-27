@@ -18,14 +18,27 @@ marker="${XDG_RUNTIME_DIR:-/tmp}/punktfunk-stream-prep.stopped"
 
 [ -f "$marker" ] || exit 0
 
+# The session's own compositor, found by what the process *is*, not by a command line that mentions
+# it: `pgrep -f punktfunk-gamescope` also matches the terminal that ran this script, and a stray
+# match here means the desktop is never restored.
+session_alive() {
+	for dir in /proc/[0-9]*; do
+		exe=$(readlink "$dir/exe" 2>/dev/null) || continue
+		case "${exe##*/}" in
+		punktfunk-gamescope*) return 0 ;;
+		esac
+	done
+	return 1
+}
+
 # The session is torn down around the event: wait it out, or a reconnect is still streaming.
 i=0
 while [ "$i" -lt 32 ]; do
-	pgrep -f 'punktfunk-gamescope' >/dev/null 2>&1 || break
+	session_alive || break
 	sleep 0.25
 	i=$((i + 1))
 done
-pgrep -f 'punktfunk-gamescope' >/dev/null 2>&1 && exit 0
+session_alive && exit 0
 
 stopped=$(cat "$marker" 2>/dev/null)
 rm -f "$marker"
@@ -35,7 +48,12 @@ start_desktop() {
 		systemd-run --user --collect --quiet "$@" >/dev/null 2>&1; then
 		return 0
 	fi
-	setsid -f "$@" </dev/null >/dev/null 2>&1
+	if setsid -f "$@" </dev/null >/dev/null 2>&1; then
+		return 0
+	fi
+	# Failing quietly is why a desktop that never came back needed a terminal to explain.
+	logger -t punktfunk-stream-restore "could not start $1; start it yourself"
+	return 1
 }
 
 heronite_program() {

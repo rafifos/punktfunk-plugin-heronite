@@ -69,8 +69,8 @@ creates a window, so the stream has nothing to show while the game appears on th
 **Quit Steam as well as Heronite before streaming**, so the session starts its own — the hooks below
 do that for you. If the dialog still appears, read the game's environment
 (`tr '\0' '\n' < /proc/<game pid>/environ`): inside the session it carries `GAMESCOPE_WAYLAND_DISPLAY`
-and `PUNKTFUNK_GAMESCOPE_WSI=1`, and `WAYLAND_DISPLAY` is empty. The global setting below is what keeps
-that last one empty.
+and `PUNKTFUNK_GAMESCOPE_WSI=1`, and `WAYLAND_DISPLAY` is empty. If it is not empty, something in
+front of Steam put it there — see [What sets `WAYLAND_DISPLAY`](#what-sets-wayland_display).
 
 **So neither has to be quit by hand**, install the hooks. `hooks.json` supports `"hold": true` on
 `game.launching`: the launch waits for the hook, so it runs _before_ the entry's command — a connect
@@ -102,8 +102,13 @@ it happens:
 tail -20 ~/.local/state/punktfunk/stream-diagnostics.log
 ```
 
-A real capture from a gamescope session — this one **before** the setting below existed — shows why
-that matters:
+The file is capped: once it passes 512 KiB the oldest lines are dropped, so a long-lived host does not
+grow it without bound. `PUNKTFUNK_CAPTURE=0` turns the samples off entirely, alongside `PUNKTFUNK_PREP=0`
+and `PUNKTFUNK_RESTORE=0` for the other two. A delayed sample that outlives its session records that
+fact and stops there, rather than reporting the desktop as if it were the stream.
+
+A real capture from a gamescope session — this one **before** the launcher stopped setting the
+variable — shows why that matters:
 
 ```
 --- pid 272301 (steam): … steam://rungameid/3527290
@@ -114,27 +119,43 @@ that matters:
     DISPLAY=:2
 ```
 
-With the setting in place that third line reads `WAYLAND_DISPLAY=` — empty, which is what puts the
+With that entry in place the third line reads `WAYLAND_DISPLAY=` — empty, which is what puts the
 game on the session's compositor.
 
 Steam's runtime re-exposes the host session's Wayland socket inside the container, so a
 Wayland-capable client under it presents to KWin while the gamescope WSI layer is loaded — which is
-exactly when that layer reports `Creating swapchain for non-Gamescope swapchain`. The fix belongs in
-Heronite, in its **global environment options**, so it reaches every title it starts:
+exactly when that layer reports `Creating swapchain for non-Gamescope swapchain`. The condition is
+the game's own environment, so the fix is wherever the variable comes from.
 
-| Variable          | Value     |
-| ----------------- | --------- |
-| `WAYLAND_DISPLAY` | _(empty)_ |
+### What sets `WAYLAND_DISPLAY`
 
-No game needs its own launch option, and nothing needs to sit in front of `%command%` — other options
-a wrapper like goverlay used to set can move into the same place. Measured on the host: with it set,
-a streamed game renders inside the session; with it removed, the same game presents to the desktop
-and the client stays on a black screen.
+The session's environment is clean — the host forks the session without `WAYLAND_DISPLAY` — so the
+variable only reaches the game if the launcher in front of Steam puts it there. Measured on this host
+by capturing the same title through punktfunk's own `steam:` entry and through Heronite's:
 
-Earlier revisions of this README documented a per-game Steam launch option
-(`env -u WAYLAND_DISPLAY %command%`) and a goverlay route, because attempts above Steam were undone
-by its runtime before the game ran. Heronite's global option is the one that survives, so both are
-gone: one was per-title, the other an extra process in the chain.
+| Entry                       | session's own Steam         | game   |
+| --------------------------- | --------------------------- | ------ |
+| `steam:2483190`             | no `WAYLAND_DISPLAY`        | fine   |
+| `heronite:sideload:steam_…` | `WAYLAND_DISPLAY=wayland-1` | broken |
+
+So look at the launcher, not at Steam: a `WAYLAND_DISPLAY` entry in the launcher's **environment
+options**, per app or global, is carried into the session's Steam and from there into the game.
+Removing it is the fix, and no launch option is needed afterwards.
+
+Two escape hatches, if a launcher keeps setting it and its own settings will not let go:
+
+| Where                          | Setting                            | What it does                                                        |
+| ------------------------------ | ---------------------------------- | ------------------------------------------------------------------- |
+| Heronite → environment options | `WAYLAND_DISPLAY` = _(empty)_      | client tries `wayland-0`, fails, falls back to X11 inside gamescope |
+| Steam → launch options         | `env -u WAYLAND_DISPLAY %command%` | removes the variable for that title only                            |
+
+Both work; the first is one setting for every title, the second is per game. Neither is a substitute
+for removing the entry that set it, which is why this repository's own notes moved on: earlier
+revisions documented the per-game option as the fix, then the launcher's global variable, and the
+measurements above are what settled it.
+
+A hook cannot do this at all: the host forks the game with an environment a hook cannot reach into.
+That is why the prep script moves instances out of the way instead of rewriting variables.
 
 HDR is unaffected — the HDR10 swapchain comes from the gamescope WSI layer over X11
 (`--hdr-enabled`, `PUNKTFUNK_GAMESCOPE_WSI=1`, `DXVK_HDR=1`), none of which reads `WAYLAND_DISPLAY`.
@@ -157,19 +178,21 @@ being launched, the prep stops it too — otherwise the session's Heronite hands
 desktop instance and exits, which tears the display down and reconnects in a loop. A _different_
 title running at the desk is left alone, with a line in the journal saying so.
 
-Two opt-outs, for the hook's `run` string or the installer's environment:
+Three opt-outs, for the hook's `run` string or the installer's environment:
 
 ```sh
 PUNKTFUNK_PREP=0     # never stop anything; close Steam/Heronite yourself before a stream
 PUNKTFUNK_RESTORE=0  # never start them again when a session ends
+PUNKTFUNK_CAPTURE=0  # never write a diagnostics sample
 ```
 
 **The plugin does not try.** An earlier revision wrapped every transport in
 `env PROTON_ENABLE_WAYLAND=0`; a capture of the running game showed `PEAK.exe` carrying
 `WAYLAND_DISPLAY=wayland-1` and no `PROTON_ENABLE_WAYLAND` at all, so the prefix was reverted rather
 than left in place looking like a fix. `ExecTemplate` has no environment field and the host reads the
-manifest before the plugin runs, so a console toggle could not reach the game either. The unset has to
-happen at the game's own launch, which is why it is a launch option and not a plugin setting.
+manifest before the plugin runs, so a console toggle could not reach the game either. Nothing above
+the game's own launch can set a variable it does not already carry, which is why the fix is the
+launcher's own setting and not a plugin, hook or prefix.
 
 The prep stops only processes **without** `GAMESCOPE_WAYLAND_DISPLAY` in their environment, so the
 session's own Heronite and Steam are never touched, and a desk launch is skipped outright. It also

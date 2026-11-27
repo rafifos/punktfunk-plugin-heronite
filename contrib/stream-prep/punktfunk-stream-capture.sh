@@ -8,6 +8,9 @@
 # second happens, so the log names the cause rather than a symptom.
 set -u
 
+# Diagnostics are opt-out: PUNKTFUNK_CAPTURE=0 leaves no trace on disk.
+[ "${PUNKTFUNK_CAPTURE:-1}" = 0 ] && exit 0
+
 # `game.running` fires when the host sees the launcher's process, which can be a minute before
 # Proton and the game exist. A delayed sample catches the game itself.
 delay="${PUNKTFUNK_CAPTURE_DELAY:-0}"
@@ -17,13 +20,35 @@ case "$delay" in '' | *[!0-9]*) delay=0 ;; esac
 out="${XDG_STATE_HOME:-$HOME/.local/state}/punktfunk/stream-diagnostics.log"
 mkdir -p "$(dirname "$out")"
 
+# One file, appended to on every stream, forever. Trim before writing so a long-lived host does not
+# grow it without bound; the newest samples are the ones worth keeping.
+if [ -f "$out" ] && [ "$(wc -c <"$out" 2>/dev/null || echo 0)" -gt 524288 ]; then
+	tail -n 2000 "$out" >"$out.tmp" && mv "$out.tmp" "$out"
+fi
+
+# The session's own compositor, found by what the process *is*, not by a command line that mentions
+# it: `pgrep -f punktfunk-gamescope` also matches the terminal running this script.
+session_pids() {
+	for dir in /proc/[0-9]*; do
+		exe=$(readlink "$dir/exe" 2>/dev/null) || continue
+		case "${exe##*/}" in
+		punktfunk-gamescope*) printf '%s\n' "${dir#/proc/}" ;;
+		esac
+	done
+}
+
 {
 	echo "=== $(date -Is) game.running title=${PF_EVENT_GAME_TITLE:-?} app=${PF_EVENT_GAME_APP:-?} delay=${delay}s"
 
-	for p in $(pgrep -f 'punktfunk-gamescope' 2>/dev/null); do
-		echo "session pid $p: $(tr '\0' ' ' <"/proc/$p/cmdline" 2>/dev/null | cut -c1-140)"
-		break
-	done
+	session=$(session_pids | head -1)
+	if [ -z "$session" ]; then
+		# The delayed sample outlives a session that ended early. Recording the desktop here reads
+		# as a stream that rendered to wayland-1, which is how it was misdiagnosed once already.
+		echo "--- no session: the stream ended before this sample; nothing about it to record"
+		echo
+		exit 0
+	fi
+	echo "session pid $session: $(tr '\0' ' ' <"/proc/$session/cmdline" 2>/dev/null | cut -c1-140)"
 
 	# Match on `comm`, the executable's own name: a shell whose command line merely mentions
 	# wine (this hook, a terminal, an editor) is not a game process.
