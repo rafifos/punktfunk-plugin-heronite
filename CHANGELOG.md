@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.3.0](https://github.com/rafifos/punktfunk-plugin-heronite/compare/v0.2.0...v0.3.0) (2026-11-27)
+
+
+### Features
+
+* **launcher:** name a distinct brand mark for each tile ([8534eef](https://github.com/rafifos/punktfunk-plugin-heronite/commit/8534eef456c59f22a837b75a92b67ebb7c876245))
+* **launcher:** one mark for both tiles, licensed GPL-3.0 ([1ad955a](https://github.com/rafifos/punktfunk-plugin-heronite/commit/1ad955aab04a8e9b9ef767f1c8b9e46a173ef6c7))
+
+
+### Bug Fixes
+
+* **art:** serve the art Heronite already holds instead of guessing the CDN ([043494b](https://github.com/rafifos/punktfunk-plugin-heronite/commit/043494bcda2b2e72ee6eeb8e26ecfdf17a8cc426))
+* **contrib:** drop the guard that re-broke the desk-game decision ([03794ca](https://github.com/rafifos/punktfunk-plugin-heronite/commit/03794ca6836534093c7c69022489ee58fd4cd824))
+
+
+### Reverts
+
+* **assets:** stop asserting a licence these files do not hold ([644aceb](https://github.com/rafifos/punktfunk-plugin-heronite/commit/644aceb2f07b1af4a71d0553d407e062b0c138fd))
+
 ## [0.2.0](https://github.com/rafifos/punktfunk-plugin-heronite/compare/v0.1.1...v0.2.0) (2026-11-25)
 
 
