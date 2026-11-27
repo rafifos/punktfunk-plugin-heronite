@@ -79,9 +79,6 @@ the hooks meet:
 - [What sets WAYLAND_DISPLAY](https://github.com/rafifos/punktfunk-plugin-heronite/wiki/What-sets-WAYLAND_DISPLAY)
   covers the black-screen failure and the two settings that cause it.
 
-The pages live in [docs/wiki](docs/wiki) so they are edited with the code.
-`contrib/publish-wiki.sh` copies them into the wiki.
-
 ## Install
 
 ```sh
