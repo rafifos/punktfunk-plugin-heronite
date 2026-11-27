@@ -9,7 +9,7 @@ on:
         type: string
     secrets:
       npm-token:
-        required: false
+        required: true
   workflow_dispatch:
     inputs:
       ref:
@@ -24,7 +24,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      # npm provenance and trusted publishing both authenticate the run through this identity.
+      # `--provenance` signs the attestation with this run's GitHub identity. The registry
+      # credential is the token below, and the two are separate.
       id-token: write
     steps:
       - uses: actions/checkout@v7
@@ -36,21 +37,12 @@ jobs:
         with:
           bun-version: 1.4.5
 
-      # Node 24 for the npm line it carries: trusted publishing needs npm 11.5.1 or newer, and the
-      # version bundled with a given image is not guaranteed. No `registry-url`: it writes an
-      # `.npmrc` interpolating `${NODE_AUTH_TOKEN}`, and `publishConfig.registry` already names the
-      # registry.
+      # `registry-url` writes the `.npmrc` that reads `NODE_AUTH_TOKEN`, which the publish step
+      # supplies from the secret.
       - uses: actions/setup-node@v7
         with:
           node-version: 24
-
-      # Pinned rather than @latest: the trusted-publishing exchange is a version-sensitive code
-      # path on npm's side, and a floating toolchain turns a registry change nobody here made into
-      # a release that fails for no reason in this repository. 12.2.3 published 0.1.1.
-      - name: Use an npm that can use trusted publishing
-        run: |
-          npm install -g npm@12.2.3
-          npm --version
+          registry-url: https://registry.npmjs.org
 
       - name: Install
         run: bun install --frozen-lockfile
@@ -62,12 +54,8 @@ jobs:
         env:
           REF: ${{ inputs.ref }}
         run: |
-          # Release Please names a package tag `<component>-v<version>` unless told otherwise, so
-          # take the suffix after the last `v`: both `plugin-heronite-v0.1.0` and `v0.1.0` land on
-          # the version.
-          tag="${REF##*v}"
           version="$(node -p "require('./package.json').version")"
-          if [ "$tag" != "$version" ]; then
+          if [ "${REF#v}" != "$version" ]; then
             echo "::error::tag $REF does not match package.json $version"
             exit 1
           fi
@@ -78,7 +66,7 @@ jobs:
           REF: ${{ inputs.ref }}
         run: |
           name="$(node -p "require('./package.json').name")"
-          version="${REF##*v}"
+          version="${REF#v}"
           if npm view "$name@$version" version >/dev/null 2>&1; then
             echo "::notice::$name@$version is already published"
             echo "publish=false" >>"$GITHUB_OUTPUT"
@@ -86,55 +74,23 @@ jobs:
             echo "publish=true" >>"$GITHUB_OUTPUT"
           fi
 
-      # npm answers a refused exchange with a bare `ENEEDAUTH` and keeps the registry's reason for
-      # its debug log, so the one piece of information that identifies the fix never reaches this
-      # page. Ask the registry the same question first and print its answer.
-      - name: Preflight the trusted publisher
-        if: steps.check.outputs.publish == 'true'
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.npm-token }}
-        run: bun scripts/preflight-trusted-publish.ts
-
-      # Which credential this run has, in the log, before anything fails. A repository secret wins
-      # while it exists; otherwise the run's OIDC identity is the only credential, and it can only
-      # publish once a trusted publisher is bound to the package on the registry.
-      - name: Which credential publishes this
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.npm-token }}
-        run: |
-          npm --version
-          if [ -n "${NODE_AUTH_TOKEN:-}" ]; then
-            echo "credential: repository secret NPM_TOKEN"
-          elif [ -n "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ]; then
-            echo "credential: OIDC (trusted publishing)"
-          else
-            echo "::warning::no token and no OIDC endpoint; the publish cannot authenticate"
-          fi
-
+      # A token, not trusted publishing. This repository was created after 2026-07-15, so GitHub
+      # issues the immutable OIDC subject form, `repo:<owner>@<id>/<repo>@<id>:ref:...`. The
+      # registry cannot resolve that form to a trusted publisher and answers 404 with
+      # "package not found". npm/cli#9969 tracks the defect, and GitHub ignores a request to go
+      # back to the older subject format.
+      #
+      # `--provenance` still works: it uses this job's `id-token: write` for the Sigstore signing
+      # certificate, which is independent of the registry credential.
       - name: Publish
-        id: publish
         if: steps.check.outputs.publish == 'true'
+        # `npm-token` arrives from release-please.yml. A hand-run dispatch has no caller, so it
+        # reads the repository secret directly.
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.npm-token }}
+          NODE_AUTH_TOKEN: ${{ secrets.npm-token || secrets.NPM_TOKEN }}
         run: |
-          set +e
-          if [ -n "${NODE_AUTH_TOKEN:-}" ]; then
-            printf '//registry.npmjs.org/:_authToken=%s\n' "$NODE_AUTH_TOKEN" >"$RUNNER_TEMP/.npmrc"
-            output=$(npm publish --provenance --access public --userconfig "$RUNNER_TEMP/.npmrc" 2>&1)
-          else
-            output=$(npm publish --provenance --access public 2>&1)
+          if [ -z "${NODE_AUTH_TOKEN:-}" ]; then
+            echo "::error::no npm token. Add the repository secret, then re-run: gh secret set NPM_TOKEN"
+            exit 1
           fi
-          status=$?
-          printf '%s\n' "$output"
-          if [ "$status" -ne 0 ]; then
-            case "$output" in
-              *"need auth"* | *E401* | *ENEEDAUTH*)
-                echo "::error::npm found no usable credential. Bind the trusted publisher first:"
-                echo "::error::  npm trust github @rafifos/plugin-heronite --repo rafifos/punktfunk-plugin-heronite --file publish.yml --allow-publish"
-                ;;
-              *EOTP*)
-                echo "::error::the credential needs a one-time password; publish this version by hand, or use an Automation token"
-                ;;
-            esac
-            exit "$status"
-          fi
+          npm publish --provenance --access public

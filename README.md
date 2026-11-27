@@ -314,8 +314,8 @@ The CI run for the release pull request waits for a maintainer to approve it. Gi
 request that `github-actions[bot]` opens as work from an outside collaborator. Approve the run, then
 merge.
 
-Tags have the form `v<version>`, because `include-component-in-tag` is off. `publish.yml` reads the
-version from the end of the tag, so a tag with a component prefix would also work.
+Tags have the form `v<version>`, because `include-component-in-tag` is off. `publish.yml` strips
+that `v` and compares the rest with `package.json`.
 
 Merge the release pull request to ship. The version in `package.json`, the changelog entry, the
 `vX.Y.Z` tag and the npm package then agree. You can also give `publish.yml` a tag by hand
@@ -326,40 +326,35 @@ The plugin definition has no version of its own. `pluginDef.version` reads `pack
 `bun build` puts that value into `dist`. A release therefore reports the new version to the host
 without a second location to change.
 
-Publishing uses **trusted publishing**, and the job has no npm credential. `id-token: write` lets
-npm verify the GitHub OIDC identity of the run and create a short-lived token. `--provenance` signs
-the attestation with the same identity. The binding is on the registry, not in this repository:
+Publishing uses an **npm granular access token**, held in the `NPM_TOKEN` repository secret.
+`--provenance` still signs an attestation, because that uses the job's `id-token: write` for the
+Sigstore certificate, not the registry credential.
 
-```sh
-npm trust github @rafifos/plugin-heronite \
-  --repo rafifos/punktfunk-plugin-heronite \
-  --file publish.yml --allow-publish
-npm trust list @rafifos/plugin-heronite
-```
-
-npm reports a refused exchange as a bare `ENEEDAUTH` and keeps the reason from the registry in its
-debug log. `publish.yml` therefore asks the registry the same question first
-([preflight-trusted-publish.ts](scripts/preflight-trusted-publish.ts)) and prints the answer. A
-binding that no longer matches, for example after a renamed repository, a renamed workflow file or a
-deleted entry, then identifies itself in the run summary. You do not need `--loglevel verbose`:
+**Trusted publishing does not work for this repository.** GitHub issues the immutable OIDC subject
+form (`repo:<owner>@<id>/<repo>@<id>:ref:…`) for every repository created after 2026-07-15, and the
+registry cannot resolve that form to a trusted publisher. It answers:
 
 ```
-::error::the registry refused the OIDC exchange for @rafifos/plugin-heronite (HTTP 404: …)
-::error::bind or re-bind the workflow, then re-run: npm trust github …
+HTTP 404: OIDC token exchange error - package not found
 ```
 
-Run the workflow again after you bind it, and the repair is complete. A version that is already on
-the registry causes no operation, and a version that failed to publish is still absent, so the retry
-publishes it. Use the workflow for publishing, also in an emergency. A manual publish has no
-attestation, and npm does not let you publish a version again to add one, so the repair costs a
-patch release.
+The package is on the registry, so the message names the wrong thing. [npm/cli#9969][9969] tracks
+the defect. GitHub accepts a request to go back to the older subject format and then keeps the new
+one, so there is nothing to change here. Switch back to trusted publishing, and delete the secret,
+when that issue closes and a run logs `credential: OIDC (trusted publishing)`.
+
+[9969]: https://github.com/npm/cli/issues/9969
+
+A version that is already on the registry causes no operation, and a version that failed to publish
+is still absent, so a re-run publishes it. A manual publish has no attestation, and npm does not let
+you publish a version again to add one, so repairing a hand-published version costs a patch
+release.
 
 ### The first version, once
 
-You can bind a trusted relationship only to a package that already exists, so version `0.1.0` needs
-one publish that is not trusted. Publish the real version, not a placeholder. npm versions are
-immutable, so a `0.0.0` stays in the version list, and a later unpublish releases the name that the
-trust binding uses. Merge the release pull request first, then run this from the tag:
+A token cannot be scoped to a package that does not exist yet, so the first version needs one manual
+publish. Publish the real version, not a placeholder. npm versions are immutable, so a `0.0.0`
+stays in the version list. Merge the release pull request first, then run this from the tag:
 
 ```sh
 git checkout v0.1.0
@@ -369,28 +364,18 @@ npm publish --access public
 ```
 
 `prepublishOnly` builds `dist`, so the tarball agrees with the tag. A local publish cannot attach
-provenance, because that needs a CI OIDC identity. `0.1.0` therefore has no attestation and every
-later version has one. If you also want an attestation for `0.1.0`, put an npm Automation token in
-the `NPM_TOKEN` secret for that release and delete the secret afterwards. `publish.yml` uses a token
-only while the secret exists and uses OIDC when the secret is gone. It skips a version that is
-already published, so a merge after a manual publish causes no operation instead of a failure.
+provenance, because that needs a CI identity. That first version therefore has no attestation.
 
-Then bind the trust. Publish within two days, because a new trusted publisher expires when it is
-never used:
+The version you bootstrap has to exist before a token can be scoped to it, so create the token
+afterwards and add it as the `NPM_TOKEN` repository secret:
 
 ```sh
-npm trust github @rafifos/plugin-heronite \
-  --repo rafifos/punktfunk-plugin-heronite \
-  --file publish.yml --allow-publish
-npm trust list @rafifos/plugin-heronite
+# npmjs.com, Access Tokens, Generate New Token, Granular Access Token
+#   Packages and scopes: @rafifos/plugin-heronite, read and write
+gh secret set NPM_TOKEN --repo rafifos/punktfunk-plugin-heronite
 ```
 
-`--allow-publish` is necessary. A new relationship permits `npm stage publish` only, so the
-workflow's plain `npm publish` is refused without this flag. Name `publish.yml`, the file that holds
-the publishing job. The jobs of a reusable workflow keep the identity of their own file in the OIDC
-claims. The `v0.1.1` release of this repository proved this: the run logged
-`credential: OIDC (trusted publishing)`, signed a provenance statement and published. `0.1.0` was
-the manual bootstrap and has no attestation. Every release from `0.1.1` has one.
+Every release after that goes through `publish.yml` and carries an attestation.
 
 `bootstrap-sha` in `release-please-config.json` is `d537e40`. That is the parent of `190d767`, the
 first commit of this repository's own history. Every changelog therefore starts at `190d767` and
