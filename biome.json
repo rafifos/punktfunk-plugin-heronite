@@ -27,7 +27,8 @@
           }
         },
         "useExportsLast": "warn",
-        "useExportType": "warn"
+        "useExportType": "warn",
+        "useImportType": "warn"
       },
       "suspicious": {
         "noUnknownAtRules": "off",
