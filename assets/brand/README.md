@@ -16,8 +16,11 @@ sources.
 ## How they are made
 
 The colours are the custom properties of heronite.app: `--text` `#eef2f6` for the mark and the name,
-`--muted` `#a7b2be` for the tagline, and a plate that runs from `--surface-2` `#141921` to `--bg`
-`#0a0d11`.
+`--muted` `#a7b2be` for the tagline, and a plate that runs from `--surface-2` `#141921` to `#0a0d11`.
+
+The wordmark says **Heronite**, because that is the name of the two tiles that the plugin adds to the
+library: **Heronite** and **Heronite Console**. The tagline names what the tiles give the user, and
+keeps the name of the plugin out of the picture, where it would say nothing.
 
 Both are SVG. Each draws Heronite's `H` from
 [../heronite-marks/heronite.svg](../heronite-marks/heronite.svg) with a `translate`/`scale` pair and
