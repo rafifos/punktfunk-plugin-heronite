@@ -2,11 +2,11 @@
 
 [![Formatted with Biome](https://img.shields.io/badge/Formatted_with-Biome-60a5fa?style=flat&logo=biome)](https://biomejs.dev/) [![Linted with Biome](https://img.shields.io/badge/Linted_with-Biome-60a5fa?style=flat&logo=biome)](https://biomejs.dev) [![Checked with Biome](https://img.shields.io/badge/Checked_with-Biome-60a5fa?style=flat&logo=biome)](https://biomejs.dev)
 
-![Heronite's H mark beside its name](assets/brand/banner.png)
+![Heronite's H mark beside its name](assets/brand/banner-heronite.png)
 
-A [Punktfunk](https://git.unom.io/unom/punktfunk) plugin for [Heronite](https://heronite.app). Your
-Heronite games show up in the host library, and each one starts the way Heronite starts it, with the
-same Wine or Proton prefix, emulator profile, playtime and console mode.
+A [Punktfunk](https://git.unom.io/unom/punktfunk) plugin for [Heronite](https://heronite.app). Each
+game gets an entry in the host library. Heronite still launches it, so your Wine or Proton prefix,
+emulator profile and playtime keep working.
 
 New to Punktfunk? [What is Punktfunk?](docs/punktfunk.md) explains the host and client model, how a
 stream flows, and where plugins operate. New to Heronite? [What is Heronite?](docs/heronite.md)
