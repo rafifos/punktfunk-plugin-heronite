@@ -15,6 +15,10 @@ sources.
 
 ## How they are made
 
+The colours are the custom properties of heronite.app: `--text` `#eef2f6` for the mark and the name,
+`--muted` `#a7b2be` for the tagline, and a plate that runs from `--surface-2` `#141921` to `--bg`
+`#0a0d11`.
+
 Both are SVG. Each draws Heronite's `H` from
 [../heronite-marks/heronite.svg](../heronite-marks/heronite.svg) with a `translate`/`scale` pair and
 sets the type in whatever sans the renderer has. To remake a raster:
