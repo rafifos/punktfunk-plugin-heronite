@@ -23,7 +23,17 @@ marker="${XDG_RUNTIME_DIR:-/tmp}/punktfunk-stream-prep.stopped"
 
 # You can turn the prep off. If it is off, a Heronite or Steam process that already runs on the
 # desktop keeps the launch. The stream then operates only if you closed these processes yourself.
+# `PUNKTFUNK_PREP=0` in the hook's run string wins over the plugin setting.
+
+# The plugin writes this file from its two streaming settings. A hook cannot read settings, so the
+# file carries them: `stop_desktop=1` or `0`, and `capture=1` or `0`.
+flags="${XDG_CONFIG_HOME:-$HOME/.config}/punktfunk/plugin-state/heronite/stream-flags"
+flag() {
+	[ -r "$flags" ] && grep -qx "$1=0" "$flags"
+}
+
 [ "${PUNKTFUNK_PREP:-1}" = 0 ] && exit 0
+flag stop_desktop && exit 0
 
 # A game on the desktop blocks the launch. The session's Heronite gives the request to the desktop
 # instance and exits. The display stops and reconnects in a loop. The hook stops the game, but only

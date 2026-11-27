@@ -45,6 +45,8 @@ const settings = (overrides: Partial<HeroniteSettings> = {}): HeroniteSettings =
   programDir,
   showLauncherTile: true,
   showConsoleTile: true,
+  stopDesktopClients: true,
+  captureDiagnostics: true,
   ...overrides,
 });
 

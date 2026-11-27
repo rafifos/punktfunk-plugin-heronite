@@ -41,6 +41,7 @@ import {
   watchDirs,
 } from "./heronite/paths.js";
 import { readStats, statusLines } from "./heronite/stats.js";
+import { writeStreamFlags } from "./heronite/stream-flags.js";
 import { defineLibraryPluginWithUi } from "./kit/library-with-ui.js";
 
 const defaultedBoolean = (title: string, description: string) =>
@@ -69,6 +70,16 @@ const HeroniteConfig = Schema.Struct({
   showConsoleTile: defaultedBoolean(
     "Show a Heronite Console tile",
     "Add a tile that opens Heronite in console mode.",
+  ),
+  stopDesktopClients: defaultedBoolean(
+    "Close desktop Heronite and Steam before a stream",
+    "The streaming hooks close a Heronite or Steam left open on the desktop, because it takes " +
+      "the launch and ends the stream's display. Turn this off to keep them open.",
+  ),
+  captureDiagnostics: defaultedBoolean(
+    "Record a diagnostics sample for each stream",
+    "The streaming hook writes which display and audio path each launched game got, to " +
+      "stream-diagnostics.log. Turn this off to write nothing.",
   ),
 });
 
@@ -276,7 +287,13 @@ export const pluginDef = {
   configSchema: HeroniteConfig,
   detect: (cfg: HeroniteSettings) =>
     Effect.sync(() => dataRootPresent({ dataFolder: cfg.dataDir })),
-  scan: (cfg: HeroniteSettings) => Effect.sync(() => scanNow(cfg)),
+  scan: (cfg: HeroniteSettings) =>
+    Effect.sync(() => {
+      // The hooks cannot read settings, so the scan leaves them the two switches it just used.
+      // A settings change reruns the scan, which is what keeps the file current.
+      writeStreamFlags(cfg);
+      return scanNow(cfg);
+    }),
   launchers: (cfg: HeroniteSettings) => tilesNow(cfg),
   watchDirs: (cfg: HeroniteSettings) => {
     const root = resolveRoot(cfg);

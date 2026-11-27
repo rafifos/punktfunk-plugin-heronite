@@ -8,8 +8,18 @@
 # for non-Gamescope swapchain". The log then shows the cause.
 set -u
 
-# You can turn the diagnostics off. PUNKTFUNK_CAPTURE=0 writes nothing to disk.
+# You can turn the diagnostics off, from the plugin setting or with PUNKTFUNK_CAPTURE=0 in the
+# hook's run string.
+
+# The plugin writes this file from its two streaming settings. A hook cannot read settings, so the
+# file carries them: `stop_desktop=1` or `0`, and `capture=1` or `0`.
+flags="${XDG_CONFIG_HOME:-$HOME/.config}/punktfunk/plugin-state/heronite/stream-flags"
+flag() {
+	[ -r "$flags" ] && grep -qx "$1=0" "$flags"
+}
+
 [ "${PUNKTFUNK_CAPTURE:-1}" = 0 ] && exit 0
+flag capture && exit 0
 
 # `game.running` occurs when the host sees the launcher's process. Proton and the game can start a
 # minute later. A delayed sample records the game itself.
