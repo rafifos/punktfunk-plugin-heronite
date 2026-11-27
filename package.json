@@ -3,7 +3,7 @@
   "version": "0.3.0",
   "private": false,
   "type": "module",
-  "description": "Punktfunk plugin: publishes Heronite's games to the host's library and starts them through Heronite.",
+  "description": "Punktfunk plugin: adds Heronite's games to the host library and starts them through Heronite, with its Wine prefix, emulator profile and playtime.",
   "license": "MIT OR Apache-2.0",
   "homepage": "https://github.com/rafifos/punktfunk-plugin-heronite",
   "repository": {
