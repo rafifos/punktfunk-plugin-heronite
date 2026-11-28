@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/rafifos/punktfunk-plugin-heronite/compare/v0.4.0...v0.5.0) (2026-11-28)
+
+
+### Features
+
+* **launch:** add a setting to force the heronite:// URL handler ([6f1ef67](https://github.com/rafifos/punktfunk-plugin-heronite/commit/6f1ef6723cb774f9c57fb7b23781b37158cbccad))
+
 ## [0.4.0](https://github.com/rafifos/punktfunk-plugin-heronite/compare/v0.3.0...v0.4.0) (2026-11-27)
 
 
