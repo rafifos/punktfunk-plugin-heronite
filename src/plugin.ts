@@ -44,9 +44,9 @@ import { readStats, statusLines } from "./heronite/stats.js";
 import { writeStreamFlags } from "./heronite/stream-flags.js";
 import { defineLibraryPluginWithUi } from "./kit/library-with-ui.js";
 
-const defaultedBoolean = (title: string, description: string) =>
+const defaultedBoolean = (title: string, description: string, fallback = true) =>
   Schema.Boolean.annotate({ title, description }).pipe(
-    Schema.withDecodingDefaultKey(Effect.succeed(true), { encodingStrategy: "omit" }),
+    Schema.withDecodingDefaultKey(Effect.succeed(fallback), { encodingStrategy: "omit" }),
   );
 
 const HeroniteConfig = Schema.Struct({
@@ -62,6 +62,13 @@ const HeroniteConfig = Schema.Struct({
       description:
         "The folder holding heronite-rs. Leave empty to find it automatically or use the protocol fallback.",
     }),
+  ),
+  useProtocolUrl: defaultedBoolean(
+    "Launch through the heronite:// URL",
+    "Ignore a program on PATH and in the program folder, and hand every launch to the " +
+      "heronite:// handler. Needs a registered handler; the console tile needs a program, so it " +
+      "is unavailable.",
+    false,
   ),
   showLauncherTile: defaultedBoolean(
     "Show a Heronite tile",
@@ -89,7 +96,10 @@ const resolveRoot = (cfg: HeroniteSettings): DataRoot | undefined =>
   findDataRoot({ dataFolder: cfg.dataDir });
 
 const transportFor = (cfg: HeroniteSettings, root: DataRoot | undefined) =>
-  chooseTransport({ programFolder: cfg.programDir, flatpak: root?.flatpak }, {});
+  chooseTransport(
+    { programFolder: cfg.programDir, flatpak: root?.flatpak, useProtocolUrl: cfg.useProtocolUrl },
+    {},
+  );
 
 const scanNow = (cfg: HeroniteSettings): readonly ProviderEntry[] => {
   const root = resolveRoot(cfg);
@@ -121,18 +131,20 @@ const fileFound = (file: string): boolean => {
 };
 
 /** What the operator sees for the chosen transport, and the caveat each one carries. */
-function transportLines(transport: Transport): readonly string[] {
+function transportLines(transport: Transport, forced: boolean): readonly string[] {
   const named =
     transport.kind === "run-program"
       ? `transport: run-program (${transport.program})`
       : `transport: ${transport.kind}`;
   if (transport.kind === "open") {
+    const remedy = forced
+      ? "Turn off 'Launch through the heronite:// URL' to use a program instead."
+      : "Set the Heronite program folder (heronite-rs or Heronite-*.AppImage).";
     return [
       named,
       "warning: launches go through the heronite:// handler, and this plugin cannot verify that " +
         "the handler is registered. Without it xdg-open opens nothing, and a hand-off launch cannot " +
-        "hold a dedicated display. Set the Heronite program folder (heronite-rs or " +
-        "Heronite-*.AppImage).",
+        `hold a dedicated display. ${remedy}`,
     ];
   }
   return [
@@ -270,7 +282,9 @@ const pathsCommand: CliCommand<never> = {
         for (const file of Object.values(dataPaths(root.root))) {
           console.log(`  ${fileFound(file) ? "found" : "missing"} ${file}`);
         }
-        for (const line of transportLines(transportFor(cfg, root))) console.log(line);
+        for (const line of transportLines(transportFor(cfg, root), cfg.useProtocolUrl)) {
+          console.log(line);
+        }
       }
 
       console.log(`entries: ${scanNow(cfg).length}`);

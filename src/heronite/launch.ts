@@ -64,6 +64,8 @@ interface LaunchSettings {
   readonly programFolder?: string | undefined;
   /** True when the chosen data root is inside the Flatpak sandbox. */
   readonly flatpak?: boolean | undefined;
+  /** Force the `heronite://` handler, even when a program is available. */
+  readonly useProtocolUrl?: boolean | undefined;
 }
 
 type Transport =
@@ -157,9 +159,9 @@ function consoleLaunch(transport: Transport) {
 }
 
 /**
- * Picks the launch transport: a `heronite-rs` on PATH, then the configured program folder (its
- * binary or Heronite's AppImage), then a Flatpak data root, then the protocol URL through the
- * platform's opener.
+ * Picks the launch transport: the operator's forced protocol URL, a `heronite-rs` on PATH, the
+ * configured program folder (its binary or Heronite's AppImage), a Flatpak data root, then the
+ * protocol URL through the platform's opener.
  */
 export function chooseTransport(
   settings: LaunchSettings = {},
@@ -169,6 +171,10 @@ export function chooseTransport(
   const exists = environment.exists ?? existsSync;
   const list = environment.list ?? listDir;
   const lookup = environment.onPath ?? ((command: string) => onPath(command, platform, exists));
+
+  if (settings.useProtocolUrl === true) {
+    return { kind: "open", template: platform === "win32" ? "open-windows" : "open" };
+  }
 
   if (lookup(PROGRAM_NAME)) return { kind: "run" };
 

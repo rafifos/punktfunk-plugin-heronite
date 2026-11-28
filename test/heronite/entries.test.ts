@@ -546,6 +546,93 @@ describe("toEntry detect", () => {
     expect(detect).toEqual({ steam_appid: 440 });
   });
 
+  test("a Steam URI launch whose executable is the Steam client names only the app id", () => {
+    // Heronite records /usr/bin/steam as an installed Steam game's executable. Steam outlives
+    // the game, and install_dir /usr/bin matches nearly every process, so naming either keeps
+    // the host's session Running after the game quits.
+    const detect = toEntry(
+      game({
+        appName: "steam_2990",
+        steamAppId: "2990",
+        gameInfo: {
+          app_name: "steam_2990",
+          install: { executable: "/usr/bin/steam", platform: "linux" },
+        },
+        local: { appName: "steam_2990", launchKind: "steam-uri", steamAppId: "2990" },
+      }),
+      run,
+    )?.detect;
+
+    expect(detect).toEqual({ steam_appid: 2990 });
+  });
+
+  test("the Steam client's folder is not an install dir, but an explicit one survives", () => {
+    const entry = toEntry(
+      game({
+        appName: "steam_2990",
+        steamAppId: "2990",
+        gameInfo: {
+          app_name: "steam_2990",
+          install: {
+            executable: "C:\\Program Files (x86)\\Steam\\steam.exe",
+            install_path: "C:\\Games\\Quail",
+          },
+        },
+        local: { appName: "steam_2990", launchKind: "steam-uri", steamAppId: "2990" },
+      }),
+      run,
+    );
+
+    expect(entry?.detect).toEqual({
+      install_dir: "C:\\Games\\Quail",
+      steam_appid: 2990,
+    });
+  });
+
+  test("the local overlay's executable replaces a store record that only names Steam", () => {
+    const detect = toEntry(
+      game({
+        appName: "steam_2990",
+        steamAppId: "2990",
+        gameInfo: {
+          app_name: "steam_2990",
+          install: { executable: "/usr/bin/steam", platform: "linux" },
+        },
+        local: {
+          appName: "steam_2990",
+          launchKind: "steam-uri",
+          steamAppId: "2990",
+          remappedExecutable: "/games/quail/Quail.exe",
+        },
+      }),
+      run,
+    )?.detect;
+
+    expect(detect).toEqual({
+      install_dir: "/games/quail",
+      exe: "/games/quail/Quail.exe",
+      process_name: "Quail.exe",
+      steam_appid: 2990,
+    });
+  });
+
+  test("a Steam id that does not fit the host's u32 is not a detect hint", () => {
+    // The host decodes `steam_appid` as a u32. Sending 2^32 would reject the whole publish
+    // payload, not just this entry.
+    const appName = "steam_4294967296";
+    const entry = toEntry(
+      game({
+        appName,
+        steamAppId: "4294967296",
+        local: { appName, launchKind: "steam-uri", steamAppId: "4294967296" },
+      }),
+      run,
+    );
+
+    expect(entry?.ids).toEqual({ steam: "4294967296" });
+    expect(entry).not.toHaveProperty("detect");
+  });
+
   test("a store launch stamps HEROIC_APP_NAME", () => {
     const detect = toEntry(
       game({

@@ -37,6 +37,27 @@ describe("chooseTransport", () => {
     ).toEqual({ kind: "run" });
   });
 
+  test("the protocol-URL switch ignores a program, a folder and Flatpak", () => {
+    const everything: LaunchEnvironment = {
+      platform: "linux",
+      onPath: () => true,
+      exists: () => true,
+      list: () => ["Heronite.AppImage"],
+    };
+
+    expect(
+      chooseTransport(
+        { useProtocolUrl: true, programFolder: "/opt/heronite", flatpak: true },
+        everything,
+      ),
+    ).toEqual({ kind: "open", template: "open" });
+    expect(chooseTransport({ useProtocolUrl: true }, windows)).toEqual({
+      kind: "open",
+      template: "open-windows",
+    });
+    expect(chooseTransport({ useProtocolUrl: false }, everything)).toEqual({ kind: "run" });
+  });
+
   test("a configured program folder uses run-program", () => {
     expect(chooseTransport({ programFolder: "/opt/heronite" }, programEnvironment)).toEqual({
       kind: "run-program",

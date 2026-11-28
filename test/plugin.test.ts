@@ -43,6 +43,7 @@ let programDir: string;
 const settings = (overrides: Partial<HeroniteSettings> = {}): HeroniteSettings => ({
   dataDir: fixture,
   programDir,
+  useProtocolUrl: false,
   showLauncherTile: true,
   showConsoleTile: true,
   stopDesktopClients: true,
@@ -69,16 +70,17 @@ afterEach(() => {
 });
 
 describe("config schema", () => {
-  test("an empty config decodes with both tiles on and no folders", async () => {
+  test("an empty config decodes with both tiles on, protocol URLs off and no folders", async () => {
     const cfg = await decode({});
 
     expect(cfg.showLauncherTile).toBe(true);
     expect(cfg.showConsoleTile).toBe(true);
+    expect(cfg.useProtocolUrl).toBe(false);
     expect(cfg.dataDir).toBeUndefined();
     expect(cfg.programDir).toBeUndefined();
   });
 
-  test("the console form exposes two handed paths and two defaulted booleans", () => {
+  test("the console form exposes two handed paths and three defaulted booleans", () => {
     const derived = deriveConfigJsonSchema(HeroniteConfig) as {
       readonly schema: {
         readonly properties: Record<
@@ -96,9 +98,12 @@ describe("config schema", () => {
     expect(form.properties.showLauncherTile?.default).toBe(true);
     expect(form.properties.showConsoleTile?.type).toBe("boolean");
     expect(form.properties.showConsoleTile?.default).toBe(true);
+    expect(form.properties.useProtocolUrl?.type).toBe("boolean");
+    expect(form.properties.useProtocolUrl?.default).toBe(false);
     // Defaults stay out of the raw file, so they must stay out of `required`.
     expect(form.required ?? []).not.toContain("showLauncherTile");
     expect(form.required ?? []).not.toContain("showConsoleTile");
+    expect(form.required ?? []).not.toContain("useProtocolUrl");
   });
 });
 
@@ -149,6 +154,25 @@ describe("settings wiring", () => {
     expect(
       pluginDef.launchers(settings({ showLauncherTile: false, showConsoleTile: false })),
     ).toHaveLength(0);
+  });
+
+  test("the protocol-URL switch reaches every game and drops the console tile", async () => {
+    const cfg = settings({ useProtocolUrl: true });
+    const entries = await Effect.runPromise(pluginDef.scan(cfg));
+
+    expect(entries[0]?.launch).toEqual({
+      kind: "exec",
+      value: "open",
+      args: [{ name: "url", value: "heronite://launch?appName=1207658999&runner=gog" }],
+    });
+
+    const tiles = pluginDef.launchers(cfg);
+    expect(tiles.map((tile) => tile.external_id)).toEqual(["launcher"]);
+    expect(tiles[0]?.launch).toEqual({
+      kind: "exec",
+      value: "open",
+      args: [{ name: "url", value: "heronite://" }],
+    });
   });
 
   test("the fixture tree's tiles follow the transport", () => {

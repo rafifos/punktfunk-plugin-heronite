@@ -34,4 +34,21 @@ describe.skipIf(root === undefined)("drift against a real Heronite data root", (
     const tiles = launcherTiles(transport, {});
     expect(tiles.map((tile) => tile.external_id)).toContain("launcher");
   });
+
+  test("no detect hint names Steam itself as the game", () => {
+    // Heronite records the Steam client as an installed Steam title's executable. Steam outlives
+    // the game, so a hint that matches it keeps the host's session Running after the game quits.
+    const entries = buildEntries(assembleCollection(root as string), transport);
+
+    for (const entry of entries) {
+      const detect = entry.detect ?? {};
+      if (detect.exe !== undefined && detect.exe !== null) {
+        expect(detect.exe.toLowerCase()).not.toMatch(/[\\/]steam(\.exe|\.sh)?$/);
+      }
+      if (detect.process_name !== undefined && detect.process_name !== null) {
+        expect(detect.process_name.toLowerCase()).not.toMatch(/^steam(\.exe|\.sh)?$/);
+      }
+      expect(detect.install_dir).not.toBe("/usr/bin");
+    }
+  });
 });

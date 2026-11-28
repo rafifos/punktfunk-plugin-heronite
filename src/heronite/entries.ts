@@ -116,11 +116,14 @@ function releaseYear(value: string | undefined): number | undefined {
   return Number.isSafeInteger(year) ? year : undefined;
 }
 
+/** The wire's `steam_appid` is a u32; a non-Steam shortcut's id does not fit it. */
+const MAX_STEAM_APPID = 0xffff_ffff;
+
 function steamAppIdNumber(game: CollectionGame): number | undefined {
   const raw = game.steamAppId;
   if (raw === undefined || !/^\d+$/.test(raw)) return undefined;
   const appId = Number.parseInt(raw, 10);
-  return Number.isSafeInteger(appId) ? appId : undefined;
+  return Number.isSafeInteger(appId) && appId <= MAX_STEAM_APPID ? appId : undefined;
 }
 
 function steamCdnArt(game: CollectionGame, kind: ArtKind): string | undefined {
@@ -212,6 +215,29 @@ function directoryOf(executable: string | undefined): string | undefined {
   return nonEmpty(executable.slice(0, separator));
 }
 
+/**
+ * Steam's client, which Heronite records as a Steam URI title's executable. It is the launch
+ * method, not the game, and it outlives the game: a detect hint that names it makes the host
+ * track Steam itself, so the session stays Running after the game quits.
+ */
+function isSteamClient(executable: string): boolean {
+  const name = basenameOf(executable)?.toLowerCase();
+  return name === "steam" || name === "steam.exe" || name === "steam.sh";
+}
+
+/**
+ * The game's own executable, skipping the Steam client and falling through to the local
+ * overlay's executable when the store record only names Steam.
+ */
+function gameExecutable(game: CollectionGame): string | undefined {
+  const candidates = [
+    nonEmpty(game.gameInfo.install?.executable),
+    nonEmpty(game.local?.remappedExecutable),
+    nonEmpty(game.local?.windowsExecutable),
+  ];
+  return candidates.find((candidate) => candidate !== undefined && !isSteamClient(candidate));
+}
+
 /** Heronite stamps HEROIC_APP_NAME on every launch except emulator and Steam URI launches. */
 function stampsAppName(game: CollectionGame): boolean {
   const launchKind = game.local?.launchKind;
@@ -244,11 +270,10 @@ interface MutableDetect {
 }
 
 function detectHints(game: CollectionGame): DetectHint | undefined {
-  const exe =
-    nonEmpty(game.gameInfo.install?.executable) ??
-    nonEmpty(game.local?.remappedExecutable) ??
-    nonEmpty(game.local?.windowsExecutable);
+  const exe = gameExecutable(game);
 
+  // `exe` never names Steam's client (see gameExecutable): its folder would be `/usr/bin`,
+  // and a detect hint for that matches nearly every process on the host.
   const installDir =
     nonEmpty(game.gameInfo.install?.install_path) ??
     nonEmpty(game.local?.windowsInstallDirectory) ??

@@ -73,6 +73,12 @@ folder that holds `store` and `local_library`. If the program is not on `PATH`, 
 program folder** as well. That setting enables headless launches and the console tile on a portable
 install.
 
+**Protocol URLs instead of a program:** turn on **Launch through the heronite:// URL** to ignore a
+program on `PATH` and in the program folder. Every game, and the Heronite tile, then asks the
+registered `heronite://` handler to start instead. The handler must exist; without it `xdg-open`
+opens nothing. The console tile needs a program, so the switch removes it. This switch is off by
+default.
+
 Pause, cancel and remove stay in Heronite, because Heronite owns the files.
 
 Streaming has its own page, because a streamed launch is where the launcher, the compositor and
